@@ -1,0 +1,206 @@
+# Registre de départ des sources. Modifiable dans Réglages → Sources.
+# `owner` sert au recoupement : deux articles du même groupe ne comptent pas comme
+# deux sources indépendantes. Les domaines absents sont ajoutés à la volée (kind: unknown).
+
+# ── Agences ──────────────────────────────────────────────────────────────────
+- {domain: afp.com, name: AFP, kind: agence, country: FR, owner: AFP, owner_type: public, controller: "", lang: fr}
+- {domain: reuters.com, name: Reuters, kind: agence, country: GB, owner: Thomson Reuters, owner_type: milliardaire, controller: "Famille Thomson", lang: en}
+- {domain: apnews.com, name: Associated Press, kind: agence, country: US, owner: AP, owner_type: cooperative, controller: "", lang: en}
+- {domain: bloomberg.com, name: Bloomberg, kind: agence, country: US, owner: Bloomberg LP, owner_type: milliardaire, controller: "Michael Bloomberg", lang: en}
+- {domain: dpa.com, name: dpa, kind: agence, country: DE, owner: dpa, owner_type: cooperative, controller: "", lang: de}
+- {domain: ansa.it, name: ANSA, kind: agence, country: IT, owner: ANSA, owner_type: cooperative, controller: "", lang: it}
+- {domain: efe.com, name: EFE, kind: agence, country: ES, owner: EFE, owner_type: public, controller: "", lang: es}
+- {domain: belga.be, name: Belga, kind: agence, country: BE, owner: Belga, owner_type: cooperative, controller: "", lang: fr}
+
+# ── Presse nationale française ───────────────────────────────────────────────
+- {domain: lemonde.fr, name: Le Monde, kind: national, country: FR, owner: Groupe Le Monde, owner_type: milliardaire, controller: "Xavier Niel", lang: fr}
+- {domain: lefigaro.fr, name: Le Figaro, kind: national, country: FR, owner: Groupe Dassault, owner_type: milliardaire, controller: "Famille Dassault", lang: fr}
+- {domain: liberation.fr, name: Libération, kind: national, country: FR, owner: Presse indépendante SAS, owner_type: cooperative, controller: "", lang: fr}
+- {domain: lesechos.fr, name: Les Échos, kind: national, country: FR, owner: LVMH, owner_type: milliardaire, controller: "Bernard Arnault", lang: fr}
+- {domain: leparisien.fr, name: Le Parisien, kind: national, country: FR, owner: LVMH, owner_type: milliardaire, controller: "Bernard Arnault", lang: fr}
+- {domain: la-croix.com, name: La Croix, kind: national, country: FR, owner: Bayard, owner_type: cooperative, controller: "", lang: fr}
+- {domain: humanite.fr, name: L'Humanité, kind: national, country: FR, owner: Société nouvelle du journal L'Humanité, owner_type: independant, controller: "", lang: fr}
+- {domain: lopinion.fr, name: L'Opinion, kind: national, country: FR, owner: LVMH, owner_type: milliardaire, controller: "Bernard Arnault", lang: fr}
+- {domain: latribune.fr, name: La Tribune, kind: national, country: FR, owner: CMA CGM, owner_type: milliardaire, controller: "Rodolphe Saadé", lang: fr}
+- {domain: lejdd.fr, name: Le JDD, kind: national, country: FR, owner: Groupe Bolloré, owner_type: milliardaire, controller: "Vincent Bolloré", lang: fr}
+- {domain: mediapart.fr, name: Mediapart, kind: national, country: FR, owner: Fonds pour une presse libre, owner_type: cooperative, controller: "", lang: fr}
+- {domain: lexpress.fr, name: L'Express, kind: national, country: FR, owner: Alain Weill, owner_type: milliardaire, controller: "Alain Weill", lang: fr}
+- {domain: lepoint.fr, name: Le Point, kind: national, country: FR, owner: Groupe Artémis, owner_type: milliardaire, controller: "François Pinault", lang: fr}
+- {domain: nouvelobs.com, name: Le Nouvel Obs, kind: national, country: FR, owner: Groupe Le Monde, owner_type: milliardaire, controller: "Xavier Niel", lang: fr}
+- {domain: marianne.net, name: Marianne, kind: national, country: FR, owner: CMI France, owner_type: milliardaire, controller: "Daniel Křetínský", lang: fr}
+- {domain: courrierinternational.com, name: Courrier international, kind: national, country: FR, owner: Groupe Le Monde, owner_type: milliardaire, controller: "Xavier Niel", lang: fr}
+- {domain: challenges.fr, name: Challenges, kind: national, country: FR, owner: LVMH, owner_type: milliardaire, controller: "Bernard Arnault", lang: fr}
+- {domain: 20minutes.fr, name: 20 Minutes, kind: national, country: FR, owner: Rossel, owner_type: conglomerat, controller: "", lang: fr}
+- {domain: huffingtonpost.fr, name: Le HuffPost, kind: national, country: FR, owner: Groupe Le Monde, owner_type: milliardaire, controller: "Xavier Niel", lang: fr}
+- {domain: slate.fr, name: Slate.fr, kind: national, country: FR, owner: Slate.fr, owner_type: independant, controller: "", lang: fr}
+- {domain: lesinrocks.com, name: Les Inrocks, kind: national, country: FR, owner: Groupe Pigasse, owner_type: milliardaire, controller: "Matthieu Pigasse", lang: fr}
+- {domain: valeursactuelles.com, name: Valeurs actuelles, kind: national, country: FR, owner: Groupe Valmonde, owner_type: milliardaire, controller: "Iskandar Safa", lang: fr}
+- {domain: telerama.fr, name: Télérama, kind: national, country: FR, owner: Groupe Le Monde, owner_type: milliardaire, controller: "Xavier Niel", lang: fr}
+- {domain: alternatives-economiques.fr, name: Alternatives économiques, kind: national, country: FR, owner: Coopérative Alternatives économiques, owner_type: cooperative, controller: "", lang: fr}
+# Équilibre politique (voir EQUILIBRE.md) : autant de titres d'opinion classés à gauche qu'à droite.
+- {domain: reporterre.net, name: Reporterre, kind: national, country: FR, owner: Association La Pile, owner_type: cooperative, controller: "", lang: fr}
+- {domain: causeur.fr, name: Causeur, kind: national, country: FR, owner: Causeur.fr, owner_type: independant, controller: "", lang: fr}
+- {domain: contrepoints.org, name: Contrepoints, kind: national, country: FR, owner: Liberaux.org, owner_type: cooperative, controller: "", lang: fr}
+- {domain: famillechretienne.fr, name: Famille chrétienne, kind: national, country: FR, owner: Média-Participations, owner_type: conglomerat, controller: "Famille Montagne", lang: fr}
+
+# ── Audiovisuel français ─────────────────────────────────────────────────────
+- {domain: francetvinfo.fr, name: franceinfo, kind: national, country: FR, owner: France Télévisions, owner_type: public, controller: "", lang: fr}
+- {domain: radiofrance.fr, name: Radio France, kind: national, country: FR, owner: Radio France, owner_type: public, controller: "", lang: fr}
+- {domain: franceinter.fr, name: France Inter, kind: national, country: FR, owner: Radio France, owner_type: public, controller: "", lang: fr}
+- {domain: franceculture.fr, name: France Culture, kind: national, country: FR, owner: Radio France, owner_type: public, controller: "", lang: fr}
+- {domain: rfi.fr, name: RFI, kind: international, country: FR, owner: France Médias Monde, owner_type: public, controller: "", lang: fr}
+- {domain: france24.com, name: France 24, kind: international, country: FR, owner: France Médias Monde, owner_type: public, controller: "", lang: fr}
+- {domain: arte.tv, name: Arte, kind: national, country: FR, owner: Arte GEIE, owner_type: public, controller: "", lang: fr}
+- {domain: tf1info.fr, name: TF1 Info, kind: national, country: FR, owner: Groupe Bouygues, owner_type: milliardaire, controller: "Martin Bouygues", lang: fr}
+- {domain: bfmtv.com, name: BFMTV, kind: national, country: FR, owner: CMA CGM, owner_type: milliardaire, controller: "Rodolphe Saadé", lang: fr}
+- {domain: rmc.bfmtv.com, name: RMC, kind: national, country: FR, owner: CMA CGM, owner_type: milliardaire, controller: "Rodolphe Saadé", lang: fr}
+- {domain: cnews.fr, name: CNews, kind: national, country: FR, owner: Groupe Bolloré, owner_type: milliardaire, controller: "Vincent Bolloré", lang: fr}
+- {domain: europe1.fr, name: Europe 1, kind: national, country: FR, owner: Groupe Bolloré, owner_type: milliardaire, controller: "Vincent Bolloré", lang: fr}
+- {domain: rtl.fr, name: RTL, kind: national, country: FR, owner: Groupe M6, owner_type: conglomerat, controller: "", lang: fr}
+- {domain: lci.fr, name: LCI, kind: national, country: FR, owner: Groupe Bouygues, owner_type: milliardaire, controller: "Martin Bouygues", lang: fr}
+- {domain: publicsenat.fr, name: Public Sénat, kind: national, country: FR, owner: Sénat, owner_type: public, controller: "", lang: fr}
+- {domain: lcp.fr, name: LCP, kind: national, country: FR, owner: Assemblée nationale, owner_type: public, controller: "", lang: fr}
+
+# ── Presse régionale ─────────────────────────────────────────────────────────
+- {domain: ouest-france.fr, name: Ouest-France, kind: regional, country: FR, owner: Groupe SIPA Ouest-France, owner_type: cooperative, controller: "", lang: fr}
+- {domain: sudouest.fr, name: Sud Ouest, kind: regional, country: FR, owner: Groupe Sud Ouest, owner_type: independant, controller: "", lang: fr}
+- {domain: ladepeche.fr, name: La Dépêche du Midi, kind: regional, country: FR, owner: Groupe La Dépêche, owner_type: independant, controller: "", lang: fr}
+- {domain: leprogres.fr, name: Le Progrès, kind: regional, country: FR, owner: EBRA (Crédit Mutuel), owner_type: conglomerat, controller: "", lang: fr}
+- {domain: ledauphine.com, name: Le Dauphiné libéré, kind: regional, country: FR, owner: EBRA (Crédit Mutuel), owner_type: conglomerat, controller: "", lang: fr}
+- {domain: dna.fr, name: DNA, kind: regional, country: FR, owner: EBRA (Crédit Mutuel), owner_type: conglomerat, controller: "", lang: fr}
+- {domain: estrepublicain.fr, name: L'Est républicain, kind: regional, country: FR, owner: EBRA (Crédit Mutuel), owner_type: conglomerat, controller: "", lang: fr}
+- {domain: lavoixdunord.fr, name: La Voix du Nord, kind: regional, country: FR, owner: Rossel, owner_type: conglomerat, controller: "", lang: fr}
+- {domain: laprovence.com, name: La Provence, kind: regional, country: FR, owner: CMA CGM, owner_type: milliardaire, controller: "Rodolphe Saadé", lang: fr}
+- {domain: nicematin.com, name: Nice-Matin, kind: regional, country: FR, owner: Groupe Nice-Matin, owner_type: milliardaire, controller: "Xavier Niel", lang: fr}
+- {domain: midilibre.fr, name: Midi Libre, kind: regional, country: FR, owner: Groupe La Dépêche, owner_type: independant, controller: "", lang: fr}
+- {domain: lamontagne.fr, name: La Montagne, kind: regional, country: FR, owner: Centre France, owner_type: independant, controller: "", lang: fr}
+- {domain: letelegramme.fr, name: Le Télégramme, kind: regional, country: FR, owner: Groupe Télégramme, owner_type: independant, controller: "", lang: fr}
+- {domain: actu.fr, name: actu.fr, kind: regional, country: FR, owner: Publihebdos (Ouest-France), owner_type: cooperative, controller: "", lang: fr}
+- {domain: la1ere.francetvinfo.fr, name: Outre-mer La 1ère, kind: regional, country: FR, owner: France Télévisions, owner_type: public, controller: "", lang: fr}
+
+# ── Francophonie ─────────────────────────────────────────────────────────────
+- {domain: lesoir.be, name: Le Soir, kind: national, country: BE, owner: Rossel, owner_type: conglomerat, controller: "", lang: fr}
+- {domain: rtbf.be, name: RTBF, kind: national, country: BE, owner: RTBF, owner_type: public, controller: "", lang: fr}
+- {domain: lalibre.be, name: La Libre Belgique, kind: national, country: BE, owner: IPM, owner_type: independant, controller: "", lang: fr}
+- {domain: letemps.ch, name: Le Temps, kind: national, country: CH, owner: Fondation Aventinus, owner_type: cooperative, controller: "", lang: fr}
+- {domain: rts.ch, name: RTS, kind: national, country: CH, owner: SSR, owner_type: public, controller: "", lang: fr}
+- {domain: ledevoir.com, name: Le Devoir, kind: national, country: CA, owner: Le Devoir inc., owner_type: independant, controller: "", lang: fr}
+- {domain: radio-canada.ca, name: Radio-Canada, kind: national, country: CA, owner: CBC/Radio-Canada, owner_type: public, controller: "", lang: fr}
+- {domain: lapresse.ca, name: La Presse, kind: national, country: CA, owner: Structure à but non lucratif La Presse, owner_type: cooperative, controller: "", lang: fr}
+- {domain: jeuneafrique.com, name: Jeune Afrique, kind: international, country: FR, owner: Jeune Afrique Media Group, owner_type: independant, controller: "", lang: fr}
+- {domain: lematin.ma, name: Le Matin, kind: national, country: MA, owner: Groupe Le Matin, owner_type: conglomerat, controller: "", lang: fr}
+- {domain: tv5monde.com, name: TV5Monde, kind: international, country: FR, owner: TV5Monde, owner_type: public, controller: "", lang: fr}
+
+# ── International anglophone ─────────────────────────────────────────────────
+- {domain: bbc.com, name: BBC, kind: international, country: GB, owner: BBC, owner_type: public, controller: "", lang: en}
+- {domain: bbc.co.uk, name: BBC (UK), kind: national, country: GB, owner: BBC, owner_type: public, controller: "", lang: en}
+- {domain: theguardian.com, name: The Guardian, kind: national, country: GB, owner: Scott Trust, owner_type: cooperative, controller: "", lang: en}
+- {domain: ft.com, name: Financial Times, kind: international, country: GB, owner: Nikkei, owner_type: conglomerat, controller: "", lang: en}
+- {domain: economist.com, name: The Economist, kind: international, country: GB, owner: The Economist Group, owner_type: conglomerat, controller: "", lang: en}
+- {domain: telegraph.co.uk, name: The Telegraph, kind: national, country: GB, owner: Telegraph Media Group, owner_type: conglomerat, controller: "", lang: en}
+- {domain: thetimes.com, name: The Times, kind: national, country: GB, owner: News Corp, owner_type: milliardaire, controller: "Rupert Murdoch", lang: en}
+- {domain: independent.co.uk, name: The Independent, kind: national, country: GB, owner: Independent Digital News & Media, owner_type: milliardaire, controller: "Evgeny Lebedev", lang: en}
+- {domain: skynews.com, name: Sky News, kind: national, country: GB, owner: Comcast, owner_type: conglomerat, controller: "", lang: en}
+- {domain: spectator.co.uk, name: The Spectator, kind: national, country: GB, owner: Old Queen Street Media, owner_type: milliardaire, controller: "Paul Marshall", lang: en}
+- {domain: newstatesman.com, name: New Statesman, kind: national, country: GB, owner: New Statesman Media Group, owner_type: milliardaire, controller: "Mike Danson", lang: en}
+- {domain: nytimes.com, name: The New York Times, kind: national, country: US, owner: The New York Times Company, owner_type: independant, controller: "", lang: en}
+- {domain: washingtonpost.com, name: The Washington Post, kind: national, country: US, owner: Nash Holdings, owner_type: milliardaire, controller: "Jeff Bezos", lang: en}
+- {domain: wsj.com, name: The Wall Street Journal, kind: national, country: US, owner: News Corp, owner_type: milliardaire, controller: "Rupert Murdoch", lang: en}
+- {domain: foxnews.com, name: Fox News, kind: national, country: US, owner: Fox Corporation, owner_type: milliardaire, controller: "Rupert Murdoch", lang: en}
+- {domain: cnn.com, name: CNN, kind: national, country: US, owner: Warner Bros. Discovery, owner_type: conglomerat, controller: "", lang: en}
+- {domain: nbcnews.com, name: NBC News, kind: national, country: US, owner: Comcast, owner_type: conglomerat, controller: "", lang: en}
+- {domain: cbsnews.com, name: CBS News, kind: national, country: US, owner: Paramount Skydance, owner_type: milliardaire, controller: "David Ellison", lang: en}
+- {domain: abcnews.go.com, name: ABC News, kind: national, country: US, owner: Disney, owner_type: conglomerat, controller: "", lang: en}
+- {domain: npr.org, name: NPR, kind: national, country: US, owner: NPR, owner_type: public, controller: "", lang: en}
+- {domain: pbs.org, name: PBS, kind: national, country: US, owner: PBS, owner_type: public, controller: "", lang: en}
+- {domain: politico.com, name: Politico, kind: specialise, country: US, owner: Axel Springer, owner_type: conglomerat, controller: "", lang: en}
+- {domain: politico.eu, name: Politico Europe, kind: specialise, country: BE, owner: Axel Springer, owner_type: conglomerat, controller: "", lang: en}
+- {domain: axios.com, name: Axios, kind: national, country: US, owner: Cox Enterprises, owner_type: conglomerat, controller: "", lang: en}
+- {domain: theatlantic.com, name: The Atlantic, kind: national, country: US, owner: Emerson Collective, owner_type: milliardaire, controller: "Laurene Powell Jobs", lang: en}
+- {domain: usatoday.com, name: USA Today, kind: national, country: US, owner: Gannett, owner_type: conglomerat, controller: "", lang: en}
+- {domain: latimes.com, name: Los Angeles Times, kind: national, country: US, owner: Patrick Soon-Shiong, owner_type: milliardaire, controller: "Patrick Soon-Shiong", lang: en}
+- {domain: propublica.org, name: ProPublica, kind: national, country: US, owner: ProPublica, owner_type: cooperative, controller: "", lang: en}
+- {domain: nypost.com, name: New York Post, kind: national, country: US, owner: News Corp, owner_type: milliardaire, controller: "Rupert Murdoch", lang: en}
+- {domain: washingtonexaminer.com, name: Washington Examiner, kind: national, country: US, owner: Clarity Media Group, owner_type: milliardaire, controller: "Philip Anschutz", lang: en}
+- {domain: thedispatch.com, name: The Dispatch, kind: national, country: US, owner: The Dispatch, owner_type: independant, controller: "", lang: en}
+- {domain: reason.com, name: Reason, kind: national, country: US, owner: Reason Foundation, owner_type: cooperative, controller: "", lang: en}
+- {domain: nationalreview.com, name: National Review, kind: national, country: US, owner: National Review, owner_type: inconnu, controller: "", lang: en}
+- {domain: realclearpolitics.com, name: RealClearPolitics, kind: national, country: US, owner: RealClear Media Group, owner_type: inconnu, controller: "", lang: en}
+- {domain: city-journal.org, name: City Journal, kind: national, country: US, owner: Manhattan Institute, owner_type: cooperative, controller: "", lang: en}
+- {domain: freebeacon.com, name: Washington Free Beacon, kind: national, country: US, owner: Washington Free Beacon, owner_type: inconnu, controller: "", lang: en}
+- {domain: theamericanconservative.com, name: The American Conservative, kind: national, country: US, owner: American Ideas Institute, owner_type: cooperative, controller: "", lang: en}
+- {domain: cbc.ca, name: CBC, kind: national, country: CA, owner: CBC/Radio-Canada, owner_type: public, controller: "", lang: en}
+- {domain: abc.net.au, name: ABC Australia, kind: national, country: AU, owner: ABC Australia, owner_type: public, controller: "", lang: en}
+- {domain: aljazeera.com, name: Al Jazeera, kind: international, country: QA, owner: Al Jazeera Media Network, owner_type: public, controller: "", lang: en}
+- {domain: dw.com, name: Deutsche Welle, kind: international, country: DE, owner: Deutsche Welle, owner_type: public, controller: "", lang: en}
+- {domain: euronews.com, name: Euronews, kind: international, country: FR, owner: Alpac Capital, owner_type: conglomerat, controller: "", lang: en}
+- {domain: scmp.com, name: South China Morning Post, kind: international, country: HK, owner: Alibaba, owner_type: conglomerat, controller: "", lang: en}
+- {domain: japantimes.co.jp, name: The Japan Times, kind: national, country: JP, owner: News2u Holdings, owner_type: conglomerat, controller: "", lang: en}
+- {domain: thehindu.com, name: The Hindu, kind: national, country: IN, owner: The Hindu Group, owner_type: independant, controller: "", lang: en}
+- {domain: timesofindia.indiatimes.com, name: The Times of India, kind: national, country: IN, owner: Bennett Coleman, owner_type: conglomerat, controller: "", lang: en}
+- {domain: haaretz.com, name: Haaretz, kind: national, country: IL, owner: Haaretz Group, owner_type: independant, controller: "", lang: en}
+- {domain: timesofisrael.com, name: The Times of Israel, kind: national, country: IL, owner: The Times of Israel, owner_type: independant, controller: "", lang: en}
+- {domain: kyivindependent.com, name: The Kyiv Independent, kind: national, country: UA, owner: The Kyiv Independent, owner_type: independant, controller: "", lang: en}
+- {domain: meduza.io, name: Meduza, kind: national, country: LV, owner: Meduza, owner_type: independant, controller: "", lang: en}
+- {domain: africanews.com, name: Africanews, kind: international, country: CG, owner: Euronews, owner_type: conglomerat, controller: "", lang: en}
+- {domain: allafrica.com, name: AllAfrica, kind: international, country: US, owner: AllAfrica Global Media, owner_type: independant, controller: "", lang: en}
+- {domain: spiegel.de, name: Der Spiegel, kind: national, country: DE, owner: Spiegel-Verlag, owner_type: cooperative, controller: "", lang: de}
+- {domain: elpais.com, name: El País, kind: national, country: ES, owner: PRISA, owner_type: conglomerat, controller: "", lang: es}
+- {domain: corriere.it, name: Corriere della Sera, kind: national, country: IT, owner: RCS MediaGroup, owner_type: conglomerat, controller: "", lang: it}
+
+# ── Spécialisés (tech, science, éco) ─────────────────────────────────────────
+- {domain: theverge.com, name: The Verge, kind: specialise, country: US, owner: Vox Media, owner_type: conglomerat, controller: "", lang: en}
+- {domain: arstechnica.com, name: Ars Technica, kind: specialise, country: US, owner: Condé Nast, owner_type: milliardaire, controller: "Famille Newhouse", lang: en}
+- {domain: wired.com, name: Wired, kind: specialise, country: US, owner: Condé Nast, owner_type: milliardaire, controller: "Famille Newhouse", lang: en}
+- {domain: techcrunch.com, name: TechCrunch, kind: specialise, country: US, owner: Regent, owner_type: conglomerat, controller: "", lang: en}
+- {domain: technologyreview.com, name: MIT Technology Review, kind: specialise, country: US, owner: MIT, owner_type: cooperative, controller: "", lang: en}
+- {domain: nature.com, name: Nature, kind: specialise, country: GB, owner: Springer Nature, owner_type: conglomerat, controller: "", lang: en}
+- {domain: science.org, name: Science, kind: specialise, country: US, owner: AAAS, owner_type: cooperative, controller: "", lang: en}
+- {domain: newscientist.com, name: New Scientist, kind: specialise, country: GB, owner: Daily Mail and General Trust, owner_type: milliardaire, controller: "Lord Rothermere", lang: en}
+- {domain: numerama.com, name: Numerama, kind: specialise, country: FR, owner: Humanoid, owner_type: independant, controller: "", lang: fr}
+- {domain: 01net.com, name: 01net, kind: specialise, country: FR, owner: Keleops, owner_type: independant, controller: "", lang: fr}
+- {domain: lemondeinformatique.fr, name: Le Monde Informatique, kind: specialise, country: FR, owner: IT News Info, owner_type: independant, controller: "", lang: fr}
+- {domain: usine-digitale.fr, name: L'Usine digitale, kind: specialise, country: FR, owner: Infopro Digital, owner_type: conglomerat, controller: "", lang: fr}
+- {domain: usinenouvelle.com, name: L'Usine nouvelle, kind: specialise, country: FR, owner: Infopro Digital, owner_type: conglomerat, controller: "", lang: fr}
+- {domain: sciencesetavenir.fr, name: Sciences et Avenir, kind: specialise, country: FR, owner: Groupe Perdriel, owner_type: independant, controller: "", lang: fr}
+- {domain: futura-sciences.com, name: Futura, kind: specialise, country: FR, owner: Futura, owner_type: independant, controller: "", lang: fr}
+- {domain: lequipe.fr, name: L'Équipe, kind: specialise, country: FR, owner: Groupe Amaury, owner_type: conglomerat, controller: "", lang: fr}
+- {domain: capital.fr, name: Capital, kind: specialise, country: FR, owner: Groupe Prisma Media (Vivendi), owner_type: milliardaire, controller: "Vincent Bolloré", lang: fr}
+- {domain: theconversation.com, name: The Conversation, kind: specialise, country: FR, owner: The Conversation, owner_type: cooperative, controller: "", lang: fr}
+
+# ── Vérification des faits ───────────────────────────────────────────────────
+- {domain: factuel.afp.com, name: AFP Factuel, kind: specialise, country: FR, owner: AFP, owner_type: public, controller: "", lang: fr}
+- {domain: snopes.com, name: Snopes, kind: specialise, country: US, owner: Snopes Media Group, owner_type: independant, controller: "", lang: en}
+- {domain: politifact.com, name: PolitiFact, kind: specialise, country: US, owner: Poynter Institute, owner_type: cooperative, controller: "", lang: en}
+- {domain: fullfact.org, name: Full Fact, kind: specialise, country: GB, owner: Full Fact, owner_type: cooperative, controller: "", lang: en}
+
+# ── Institutionnel (sources primaires) ───────────────────────────────────────
+- {domain: gouvernement.fr, name: Gouvernement, kind: institutionnel, country: FR, owner: État français, owner_type: public, controller: "", lang: fr}
+- {domain: elysee.fr, name: Élysée, kind: institutionnel, country: FR, owner: État français, owner_type: public, controller: "", lang: fr}
+- {domain: assemblee-nationale.fr, name: Assemblée nationale, kind: institutionnel, country: FR, owner: Assemblée nationale, owner_type: public, controller: "", lang: fr}
+- {domain: senat.fr, name: Sénat, kind: institutionnel, country: FR, owner: Sénat, owner_type: public, controller: "", lang: fr}
+- {domain: legifrance.gouv.fr, name: Légifrance, kind: institutionnel, country: FR, owner: État français, owner_type: public, controller: "", lang: fr}
+- {domain: insee.fr, name: Insee, kind: institutionnel, country: FR, owner: État français, owner_type: public, controller: "", lang: fr}
+- {domain: vie-publique.fr, name: Vie publique, kind: institutionnel, country: FR, owner: État français, owner_type: public, controller: "", lang: fr}
+- {domain: europa.eu, name: Union européenne, kind: institutionnel, country: EU, owner: Union européenne, owner_type: public, controller: "", lang: en}
+- {domain: europarl.europa.eu, name: Parlement européen, kind: institutionnel, country: EU, owner: Union européenne, owner_type: public, controller: "", lang: en}
+- {domain: un.org, name: ONU, kind: institutionnel, country: INT, owner: ONU, owner_type: public, controller: "", lang: en}
+- {domain: who.int, name: OMS, kind: institutionnel, country: INT, owner: ONU, owner_type: public, controller: "", lang: en}
+- {domain: imf.org, name: FMI, kind: institutionnel, country: INT, owner: FMI, owner_type: public, controller: "", lang: en}
+- {domain: oecd.org, name: OCDE, kind: institutionnel, country: INT, owner: OCDE, owner_type: public, controller: "", lang: en}
+- {domain: whitehouse.gov, name: Maison-Blanche, kind: institutionnel, country: US, owner: Gouvernement américain, owner_type: public, controller: "", lang: en}
+
+# ── Réseaux sociaux : des signaux, jamais des confirmations ──────────────────
+- {domain: reddit.com, name: Reddit, kind: reseau_social, country: US, owner: Advance Publications, owner_type: conglomerat, controller: "", lang: en}
+- {domain: news.ycombinator.com, name: Hacker News, kind: reseau_social, country: US, owner: Y Combinator, owner_type: conglomerat, controller: "", lang: en}
+- {domain: t.me, name: Telegram, kind: reseau_social, country: INT, owner: Telegram, owner_type: milliardaire, controller: "Pavel Durov", lang: ""}
+
+# ── Ajouts fréquents (tech et info en ligne) ─────────────────────────────────
+- {domain: franceinfo.fr, name: franceinfo, kind: national, country: FR, owner: France Télévisions, owner_type: public, controller: "", lang: fr}
+- {domain: journaldunet.com, name: Journal du Net, kind: specialise, country: FR, owner: CCM Benchmark (Groupe Le Figaro), owner_type: milliardaire, controller: "Famille Dassault", lang: fr}
+- {domain: journaldugeek.com, name: Journal du Geek, kind: specialise, country: FR, owner: Humanoid, owner_type: independant, controller: "", lang: fr}
+- {domain: presse-citron.net, name: Presse-citron, kind: specialise, country: FR, owner: Keleops, owner_type: independant, controller: "", lang: fr}
+- {domain: frandroid.com, name: Frandroid, kind: specialise, country: FR, owner: Humanoid, owner_type: independant, controller: "", lang: fr}
+- {domain: clubic.com, name: Clubic, kind: specialise, country: FR, owner: Clubic SAS, owner_type: independant, controller: "", lang: fr}
+- {domain: lesnumeriques.com, name: Les Numériques, kind: specialise, country: FR, owner: Les Numériques, owner_type: independant, controller: "", lang: fr}
+- {domain: korben.info, name: Korben, kind: blog, country: FR, owner: Korben, owner_type: independant, controller: "", lang: fr}

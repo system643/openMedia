@@ -1,0 +1,475 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter/opsz.css";
+@import "@fontsource-variable/newsreader/opsz.css";
+@import "@fontsource-variable/newsreader/opsz-italic.css";
+
+/* Système de design, d'après les Human Interface Guidelines d'Apple (macOS 26, Liquid Glass) :
+   deux couches. Le contenu (cartes, listes, fiches) reste opaque ; le verre est réservé à la
+   couche fonctionnelle qui flotte au-dessus (barre latérale, barre d'outils, feuilles, menus).
+   Couleurs fortes : l'accent et le statut de vérification des faits, rien d'autre. Chaque paire
+   texte/fond tient 4,5:1. Rayons concentriques : panneau 14 = rangée 8 + marge 6.
+   Thème : `data-theme` sur <html> = system | light | dark. */
+
+:root {
+  --r-panel: 14px;
+  --r-item: 8px;
+  --r-card: 14px;
+  --r-sheet: 20px;
+  --paper: #fbfbfd; /* fond de la fenêtre et du contenu */
+  --surface: #ffffff; /* cartes */
+  --elevated: #ffffff; /* repli opaque des feuilles, palette, menus */
+  --ink: #1d1d1f;
+  --ink-2: #5c5c61; /* 6,6:1 sur paper */
+  --ink-3: #6e6e73; /* 4,9:1 sur paper : dates, compteurs, titres de section */
+  --line: rgba(60, 60, 67, 0.1);
+  --line-strong: rgba(60, 60, 67, 0.18);
+  --fill: rgba(120, 120, 128, 0.12); /* fonds de contrôles (segments, survol) */
+  --fill-strong: rgba(120, 120, 128, 0.2);
+  --accent: #0066cc; /* texte et liens : 5,6:1 sur paper */
+  --accent-fill: #0066cc; /* fonds des actions principales : texte blanc 5,6:1 */
+  --accent-soft: rgba(0, 102, 204, 0.1);
+  --on-accent: #ffffff;
+  --ok: #1a7f37;
+  --warn: #9e5700; /* 5,3:1 sur paper */
+  --contest: #8944ab;
+  --deny: #d70015;
+  --shadow-card: 0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 20px rgba(0, 0, 0, 0.04);
+  --shadow-pop: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.12), 0 24px 64px rgba(0, 0, 0, 0.12);
+  --focus: 0 0 0 3px rgba(0, 102, 204, 0.35);
+  /* Verre : la couche fonctionnelle seulement (barre latérale, barre d'outils, feuilles, menus). */
+  --glass-fill: rgba(255, 255, 255, 0.74);
+  --glass-sidebar: rgba(242, 242, 246, 0.72);
+  --glass-opaque: #f2f2f6;
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 10px 30px rgba(0, 0, 0, 0.1);
+  --glass-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 14px rgba(0, 0, 0, 0.06);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #18181a;
+    --surface: #222224;
+    --elevated: #2a2a2d;
+    --ink: #f5f5f7;
+    --ink-2: #b4b4b9; /* 9,1:1 sur paper */
+    --ink-3: #98989d; /* 6,4:1 sur paper, 5,0:1 sur elevated */
+    --line: rgba(255, 255, 255, 0.08);
+    --line-strong: rgba(255, 255, 255, 0.14);
+    --fill: rgba(120, 120, 128, 0.24);
+    --fill-strong: rgba(120, 120, 128, 0.36);
+    --accent: #4b9bff; /* 6,0:1 sur paper */
+    --accent-fill: #0a6cff; /* texte blanc 4,6:1 */
+    --accent-soft: rgba(75, 155, 255, 0.16);
+    --ok: #32d74b;
+    --warn: #ffb340;
+    --contest: #c77dff;
+    --deny: #ff5a50;
+    --shadow-card: 0 0 0 0.5px rgba(255, 255, 255, 0.07), 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.25);
+    --shadow-pop: 0 0 0 0.5px rgba(255, 255, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 0.4), 0 24px 64px rgba(0, 0, 0, 0.45);
+    --focus: 0 0 0 3px rgba(75, 155, 255, 0.45);
+    --glass-fill: rgba(44, 44, 48, 0.7);
+    --glass-sidebar: rgba(36, 36, 40, 0.72);
+    --glass-opaque: #2a2a2d;
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-highlight: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.4);
+    --glass-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.3);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #18181a;
+  --surface: #222224;
+  --elevated: #2a2a2d;
+  --ink: #f5f5f7;
+  --ink-2: #b4b4b9;
+  --ink-3: #98989d;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --fill: rgba(120, 120, 128, 0.24);
+  --fill-strong: rgba(120, 120, 128, 0.36);
+  --accent: #4b9bff;
+  --accent-fill: #0a6cff;
+  --accent-soft: rgba(75, 155, 255, 0.16);
+  --ok: #32d74b;
+  --warn: #ffb340;
+  --contest: #c77dff;
+  --deny: #ff5a50;
+  --shadow-card: 0 0 0 0.5px rgba(255, 255, 255, 0.07), 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 20px rgba(0, 0, 0, 0.25);
+  --shadow-pop: 0 0 0 0.5px rgba(255, 255, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 0.4), 0 24px 64px rgba(0, 0, 0, 0.45);
+  --focus: 0 0 0 3px rgba(75, 155, 255, 0.45);
+  --glass-fill: rgba(44, 44, 48, 0.7);
+  --glass-sidebar: rgba(36, 36, 40, 0.72);
+  --glass-opaque: #2a2a2d;
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px rgba(0, 0, 0, 0.4);
+  --glass-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
+
+/* Contraste élevé : textes secondaires plus sombres, filets marqués (le verre devient opaque
+   plus bas). */
+@media (prefers-contrast: more) {
+  :root {
+    --ink-2: #3a3a3e;
+    --ink-3: #4a4a4f;
+    --line: rgba(0, 0, 0, 0.28);
+    --line-strong: rgba(0, 0, 0, 0.4);
+    --glass-border: rgba(0, 0, 0, 0.45);
+  }
+  :root[data-theme="dark"] {
+    --ink-2: #d8d8dc;
+    --ink-3: #c4c4c8;
+    --line: rgba(255, 255, 255, 0.3);
+    --line-strong: rgba(255, 255, 255, 0.45);
+    --glass-border: rgba(255, 255, 255, 0.5);
+  }
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink-2: #d8d8dc;
+    --ink-3: #c4c4c8;
+    --line: rgba(255, 255, 255, 0.3);
+    --line-strong: rgba(255, 255, 255, 0.45);
+    --glass-border: rgba(255, 255, 255, 0.5);
+  }
+}
+
+@theme {
+  --font-sans: "Inter Variable", "Segoe UI Variable Text", system-ui, sans-serif;
+  --font-serif: "Newsreader Variable", Georgia, serif;
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fill: var(--fill);
+  --color-fill-strong: var(--fill-strong);
+  --color-accent: var(--accent);
+  --color-accent-fill: var(--accent-fill);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-contest: var(--contest);
+  --color-deny: var(--deny);
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* La fenêtre à la façon de macOS : grands coins arrondis (22 = barre latérale 14 + marge 8),
+   filet fin et ombre portée. La fenêtre native est transparente et sans cadre ; une marge
+   invisible tout autour porte l'ombre et sert de poignée de redimensionnement. Agrandie, la
+   fenêtre occupe tout l'écran, sans coins ni ombre. */
+html:not(.bulle) {
+  --r-window: 22px;
+  --win-gap: 12px;
+  --window-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.22), 0 2px 5px rgba(0, 0, 0, 0.1), 0 6px 12px rgba(0, 0, 0, 0.12);
+}
+html:not(.bulle) body {
+  padding: var(--win-gap);
+}
+html:not(.bulle) #root {
+  border-radius: var(--r-window);
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--paper);
+  box-shadow: var(--window-shadow);
+  transition: box-shadow 0.2s ease;
+  /* Ouverture : la fenêtre se pose en grandissant à peine, comme sur Mac. */
+  animation: window-open 0.42s cubic-bezier(0.2, 0.9, 0.25, 1.04) backwards;
+}
+@keyframes window-open {
+  from {
+    opacity: 0;
+    transform: scale(0.965);
+  }
+}
+html[data-theme="dark"]:not(.bulle) #root {
+  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.16), 0 2px 5px rgba(0, 0, 0, 0.3), 0 6px 12px rgba(0, 0, 0, 0.35);
+}
+@media (prefers-color-scheme: dark) {
+  html:not(.bulle):not([data-theme="light"]) #root {
+    box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.16), 0 2px 5px rgba(0, 0, 0, 0.3), 0 6px 12px rgba(0, 0, 0, 0.35);
+  }
+}
+/* Fenêtre inactive : ombre plus légère, comme sur Mac. */
+html[data-inactive]:not(.bulle) #root {
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+html[data-max]:not(.bulle) {
+  --r-window: 0px;
+  --win-gap: 0px;
+}
+html[data-max]:not(.bulle) #root {
+  box-shadow: none;
+}
+
+/* Voile derrière une feuille : il épouse la fenêtre, coins compris (les portails de Radix
+   sont rendus hors de #root). */
+.scrim {
+  position: fixed;
+  inset: var(--win-gap, 0px);
+  border-radius: var(--r-window, 0px);
+  background: rgba(0, 0, 0, 0.18);
+}
+:root[data-theme="dark"] .scrim {
+  background: rgba(0, 0, 0, 0.4);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scrim {
+    background: rgba(0, 0, 0, 0.4);
+  }
+}
+/* Hors de Tauri (aperçu dans un navigateur) : un fond de bureau neutre autour de la fenêtre. */
+html[data-web]:not(.bulle) body {
+  background: linear-gradient(160deg, #c8ccd6, #a9afbd);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: -0.006em;
+  color: var(--ink);
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
+  user-select: none;
+}
+
+/* Grands titres : Inter en taille d'affichage, serrée comme les titres d'Apple. */
+.title-xl {
+  font-size: 34px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  font-variation-settings: "opsz" 32;
+}
+.title-lg {
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.024em;
+  font-variation-settings: "opsz" 28;
+}
+.title-md {
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: -0.017em;
+}
+.caption {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink-2);
+  letter-spacing: 0;
+}
+
+.reading,
+input,
+textarea {
+  user-select: text;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+  border-radius: 8px;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+.scroll-area {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--fill-strong) transparent;
+  scroll-behavior: smooth;
+  transition: scrollbar-color 0.3s;
+}
+/* Barres de défilement en surimpression, comme sur Mac : discrètes tant qu'on ne survole pas. */
+@media (hover: hover) {
+  .scroll-area:not(:hover) {
+    scrollbar-color: transparent transparent;
+  }
+}
+
+.serif {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  letter-spacing: 0;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* Liquid Glass (approximation web) : flou et saturation de ce qui passe dessous, remplissage
+   translucide, filet et reflet. Réservé à la couche fonctionnelle, jamais aux cartes. */
+.glass,
+.glass-sidebar,
+.glass-capsule {
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  backdrop-filter: blur(28px) saturate(1.5);
+  box-shadow: inset 0 0.5px 0 var(--glass-highlight), 0 0 0 0.5px var(--glass-border), var(--glass-shadow);
+}
+.glass-sidebar {
+  background: var(--glass-sidebar);
+  box-shadow: inset 0 0.5px 0 var(--glass-highlight), 0 0 0 0.5px var(--glass-border), var(--glass-shadow-soft);
+}
+.glass-capsule {
+  border-radius: 9999px;
+  box-shadow: inset 0 0.5px 0 var(--glass-highlight), 0 0 0 0.5px var(--glass-border), var(--glass-shadow-soft);
+}
+
+/* Effet de bord de défilement : le contenu se floute et s'efface sous la barre d'outils au
+   lieu d'y buter, sans fond peint sous les contrôles. */
+.scroll-edge {
+  background: linear-gradient(var(--paper), color-mix(in srgb, var(--paper) 70%, transparent) 55%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(black 55%, transparent);
+  mask-image: linear-gradient(black 55%, transparent);
+}
+
+/* Dans la barre d'outils, les contrôles secondaires passent en verre. */
+.toolbar-actions .btn-quiet,
+.toolbar-actions .segmented {
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  backdrop-filter: blur(28px) saturate(1.5);
+  box-shadow: inset 0 0.5px 0 var(--glass-highlight), 0 0 0 0.5px var(--glass-border), var(--glass-shadow-soft);
+}
+.toolbar-actions .btn-quiet:hover {
+  background: color-mix(in srgb, var(--glass-fill) 88%, var(--ink));
+}
+
+/* Transparence réduite ou contraste élevé : verre opaque, sans flou. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .glass,
+  .glass-sidebar,
+  .glass-capsule,
+  .toolbar-actions .btn-quiet,
+  .toolbar-actions .segmented {
+    background: var(--glass-opaque);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .scroll-edge {
+    background: var(--paper);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+    box-shadow: 0 0.5px 0 var(--line-strong);
+  }
+}
+
+/* Le rail de vérification : la couleur dit d'emblée si un fait est établi. */
+.rail {
+  position: relative;
+  padding-left: 16px;
+}
+.rail::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 5px;
+  bottom: 5px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--rail, var(--ink-3));
+}
+.rail[data-status="confirme"] { --rail: var(--ok); }
+.rail[data-status="non_confirme"] { --rail: var(--warn); }
+.rail[data-status="conteste"] { --rail: var(--contest); }
+.rail[data-status="dementi"] { --rail: var(--deny); }
+
+/* Ancres du sommaire : le titre ne passe pas sous la barre d'outils (52 px + marge). */
+[data-toc] {
+  scroll-margin-top: 76px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* La languette : fenêtre transparente, seules la barre et la carte sont visibles. */
+html.bulle,
+html.bulle body {
+  background: transparent;
+  overflow: hidden;
+}
+
+/* Animations à la façon d'Apple pour les éléments que Radix monte et démonte (il attend la fin
+   de l'animation de sortie) : apparition en ressort, sortie brève. Voir aussi lib/motion.ts. */
+.anim-sheet[data-state="open"] {
+  transform-origin: 50% 0%;
+  animation: sheet-in 0.42s cubic-bezier(0.2, 0.9, 0.25, 1.04);
+}
+.anim-sheet[data-state="closed"] {
+  transform-origin: 50% 0%;
+  animation: sheet-out 0.14s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+.anim-scrim[data-state="open"] {
+  animation: fade-in 0.22s ease-out;
+}
+.anim-scrim[data-state="closed"] {
+  animation: fade-out 0.14s ease-in forwards;
+}
+.anim-drawer[data-state="open"] {
+  animation: drawer-in 0.42s cubic-bezier(0.2, 0.9, 0.25, 1.02);
+}
+.anim-drawer[data-state="closed"] {
+  animation: drawer-out 0.16s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+/* Menus et bulles : ils naissent de leur bouton. */
+.anim-pop {
+  transform-origin: var(--radix-tooltip-content-transform-origin, 0% 0%);
+  animation: pop-in 0.26s cubic-bezier(0.2, 0.9, 0.25, 1.06);
+}
+@keyframes sheet-in {
+  from { opacity: 0; transform: scale(0.94) translateY(-10px); }
+}
+@keyframes sheet-out {
+  to { opacity: 0; transform: scale(0.97) translateY(-4px); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+@keyframes fade-out {
+  to { opacity: 0; }
+}
+@keyframes drawer-in {
+  from { opacity: 0; transform: translateX(24px) scale(0.98); }
+}
+@keyframes drawer-out {
+  to { opacity: 0; transform: translateX(16px); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.92) translateY(-4px); }
+}

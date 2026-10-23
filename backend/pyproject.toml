@@ -1,0 +1,47 @@
+[project]
+name = "openmedia"
+version = "0.1.0"
+description = "openMedia — le moteur agentique du journal personnel (sidecar Python de l'app Tauri)."
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+    "anthropic>=1.15.0",
+    "apscheduler>=3.11.3",
+    "edge-tts>=7.3.1",
+    "fastapi>=0.146.0",
+    "feedparser>=6.0.14",
+    "httpx>=0.28.1",
+    "keyring>=25.7.0",
+    "mcp>=2.3.0",
+    "pydantic>=2.14.1",
+    "pyyaml>=6.0.3",
+    "rapidfuzz>=3.14.6",
+    "segno>=1.6.6",
+    "sqlmodel>=0.0.48",
+    "sse-starlette>=3.5.0",
+    "tldextract>=5.4.0",
+    "trafilatura>=2.3.1",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+openmedia = "openmedia.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["openmedia"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.22.3",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "respx>=0.23.1",
+]

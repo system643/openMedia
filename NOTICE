@@ -1,0 +1,41 @@
+openMedia
+Copyright 2026 Les contributeurs d'openMedia
+
+Ce logiciel est distribué sous licence Apache 2.0 (voir LICENSE).
+
+Projet indépendant. openMedia n'est affilié ni à Anthropic, ni à OpenAI, Google,
+Mistral, OpenRouter, Microsoft, au GDELT Project, à NewsGuard, à Media Bias/Fact
+Check, à Ad Fontes Media, ni à aucun média cité. Claude et Claude Code sont des
+marques d'Anthropic. Les noms des médias appartiennent à leurs éditeurs.
+
+------------------------------------------------------------------------------
+Données utilisées (non redistribuées dans ce dépôt)
+
+- GDELT Project (https://www.gdeltproject.org/) : index des articles de presse,
+  interrogé par son API DOC 2.0. Les conditions de GDELT demandent une citation
+  du GDELT Project et un lien vers https://www.gdeltproject.org/.
+
+- Notes de fiabilité des domaines : Lin, H., Lasser, J., Lewandowsky, S.,
+  Cole, R., Gully, A., Rand, D. G., & Pennycook, G. (2023). High level of
+  correspondence across different news domain quality rating sets. PNAS Nexus,
+  2(9). https://doi.org/10.1093/pnasnexus/pgad286
+  Données : https://github.com/hauselin/domain-quality-ratings
+  Ce jeu n'est pas inclus dans openMedia : il est téléchargé depuis le dépôt de
+  ses auteurs, sur le PC de l'utilisateur, après son accord.
+
+- Unes des médias : flux RSS publics que les éditeurs publient pour la
+  syndication (voir backend/openmedia/collect/fronts.py).
+
+------------------------------------------------------------------------------
+Composants tiers embarqués dans l'application construite
+
+- Inter et Newsreader (polices) : SIL Open Font License 1.1.
+- Lucide (icônes) : licence ISC.
+- edge-tts (synthèse vocale par le service de Microsoft Edge) : LGPL-3.0.
+  Bibliothèque non officielle ; utilisée seulement si l'utilisateur le demande.
+- trafilatura : Apache-2.0.
+- FastAPI, SQLModel, Pydantic, anthropic, keyring, APScheduler, rapidfuzz,
+  PyYAML, mcp : MIT. httpx, uvicorn, tldextract, sse-starlette : BSD-3-Clause.
+  feedparser : BSD-2-Clause.
+- Tauri, React, TanStack Query, Radix UI, Motion : MIT ou Apache-2.0 (voir les
+  fichiers de licence de chaque paquet dans node_modules et Cargo).
