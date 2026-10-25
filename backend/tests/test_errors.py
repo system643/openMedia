@@ -17,6 +17,8 @@ def test_http_errors_are_actionable():
     assert "quelques minutes" in str(http_error("OpenAI", 429, "Rate limit reached"))
     assert "Réglages › Moteur IA" in str(http_error("Mistral", 404, "model not found"))
     assert "surchargé" in str(http_error("Anthropic", 529))
+    tpm = str(http_error("Groq", 413, "Request too large for model `openai/gpt-oss-120b` in organization `org_x` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Requested 12000"))
+    assert "offre Groq" in tpm and "Réglages" in tpm
     local = str(http_error("LM Studio", 400, "The number of tokens to keep from the initial prompt is greater than the context length", local=True))
     assert "32 768" in local and "contexte" in local
 

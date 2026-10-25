@@ -444,7 +444,7 @@ def get_llm() -> LLM:
             raise NoApiKey("Le modèle choisi pour l'IA de ce PC est introuvable : choisis-en un dans Réglages › Moteur IA.")
         if status["choice"] == "claude_code":
             raise NoApiKey("Claude Code est introuvable : installe-le (npm install -g @anthropic-ai/claude-code) ou indique son chemin dans Réglages.")
-        raise NoApiKey("Aucun moteur IA : ajoute une clé API (Anthropic, OpenAI, DeepSeek, Gemini, Mistral, Kimi, GLM, Qwen, Grok ou OpenRouter), choisis l'IA de ce PC ou installe Claude Code, dans Réglages › Moteur IA.")
+        raise NoApiKey("Aucun moteur IA : ajoute une clé API (Anthropic, OpenAI, DeepSeek, Gemini, Mistral, Kimi, GLM, Qwen, Grok, Groq ou OpenRouter), choisis l'IA de ce PC ou installe Claude Code, dans Réglages › Moteur IA.")
     from ..config import require_consent
 
     require_consent()  # aucun envoi à une IA avant l'accord sur les conditions de fonctionnement

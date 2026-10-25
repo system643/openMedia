@@ -1,4 +1,4 @@
-"""Les fournisseurs ajoutés (DeepSeek, Kimi, GLM, Qwen, Grok, compatible OpenAI) : chacun
+"""Les fournisseurs ajoutés (DeepSeek, Kimi, GLM, Qwen, Grok, Groq, compatible OpenAI) : chacun
 reçoit la sortie structurée et la réflexion qu'il sait gérer, et le moteur se replie seul
 quand un modèle refuse un paramètre. Tous les appels vont à de faux serveurs."""
 
@@ -47,6 +47,23 @@ async def test_deepseek_gets_json_object_mode_and_its_thinking_switch():
     assert light["thinking"] == {"type": "disabled"} and light["max_tokens"] == 800  # pas de réflexion : pas de marge
     assert deep["thinking"] == {"type": "enabled"} and deep["reasoning_effort"] == "high" and deep["max_tokens"] == 800 + openai_compat.THINK_MARGIN
     assert meter.calls[0]["cached"] == 600  # le cache de DeepSeek se lit dans prompt_cache_hit_tokens
+
+
+@respx.mock
+async def test_groq_gets_strict_schema_reasoning_effort_and_its_token_param():
+    route = respx.post("https://api.groq.com/openai/v1/chat/completions").mock(return_value=httpx.Response(200, json=_chat(json.dumps(SUGGESTION))))
+    llm = OpenAICompatLLM("groq", api_key="gsk_test")
+    await llm.parse(RunMeter(), model="openai/gpt-oss-120b", task="intake", content="article", schema=IntakeSuggestion, effort="low", max_tokens=800)
+    body = _body(route)
+    assert body["model"] == "openai/gpt-oss-120b" and body["response_format"]["type"] == "json_schema"
+    assert body["reasoning_effort"] == "low" and body["max_completion_tokens"] == 800 + openai_compat.THINK_MARGIN
+
+
+@respx.mock
+async def test_groq_free_tier_limit_is_named():
+    respx.post("https://api.groq.com/openai/v1/chat/completions").mock(return_value=httpx.Response(413, json={"error": {"message": "Request too large for model `openai/gpt-oss-120b` in organization `org_x` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Requested 14210, please reduce your message size and try again.", "type": "tokens", "code": "rate_limit_exceeded"}}))
+    with pytest.raises(LLMError, match="offre Groq"):
+        await OpenAICompatLLM("groq", api_key="gsk_test").text(RunMeter(), model="openai/gpt-oss-120b", task="audio", content="x")
 
 
 def test_deepseek_price_doubles_at_peak_hours():
@@ -192,7 +209,7 @@ def test_provider_addresses_are_validated():
 
 
 def test_every_new_provider_has_models_tiers_and_a_region():
-    for p in ("deepseek", "moonshot", "zai", "qwen", "xai"):
+    for p in ("deepseek", "moonshot", "zai", "qwen", "xai", "groq"):
         assert catalog.PROVIDERS[p].region and catalog.tier_model(p, "rapide") and catalog.tier_model(p, "equilibre")
     assert catalog.tier_model("deepseek", "equilibre") == "deepseek:deepseek-v4-pro"  # on monte, jamais l'inverse
     assert catalog.tier_model("moonshot", "rapide") == "moonshot:kimi-k3"

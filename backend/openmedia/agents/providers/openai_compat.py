@@ -140,6 +140,8 @@ def reasoning_params(provider: str, effort: str, structured: bool) -> tuple[dict
         return ({"thinking": {"type": "disabled"}}, False) if light else ({"thinking": {"type": "enabled"}}, True)
     if kind == "kimi":  # K3 réfléchit toujours : `low` la raccourcit seulement
         return {"reasoning_effort": "low" if light else "high" if effort == "medium" else "max"}, True
+    if kind == "groq":  # GPT-OSS : low/medium/high ; un modèle qui refuse le paramètre le perd (voir `adapt`)
+        return {"reasoning_effort": "low" if light else "medium" if effort == "medium" else "high"}, True
     if kind == "qwen":  # en mode réflexion, Qwen ne garantit plus le JSON : pas de réflexion pour une sortie structurée
         on = not light and not structured
         return {"enable_thinking": on}, on

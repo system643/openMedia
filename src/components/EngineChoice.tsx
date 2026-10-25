@@ -37,7 +37,7 @@ export function EngineChoice({ settings: st }: { settings: Settings }) {
         badge="En ligne · facturé à l'usage"
         active={onlineReady && st.engine_active !== "claude_code" && keyed.length > 0}
       >
-        <p>Anthropic, OpenAI, DeepSeek, Gemini, Mistral, Kimi, GLM, Qwen, Grok ou OpenRouter : le fournisseur est reconnu tout seul. La clé reste dans le Gestionnaire d'identifiants de Windows et n'est envoyée qu'à son fournisseur. Petit budget : DeepSeek coûte 3 à 5 fois moins que Claude Sonnet, mais traite tes articles en Chine.</p>
+        <p>Anthropic, OpenAI, DeepSeek, Gemini, Mistral, Kimi, GLM, Qwen, Grok, Groq ou OpenRouter : le fournisseur est reconnu tout seul. La clé reste dans le Gestionnaire d'identifiants de Windows et n'est envoyée qu'à son fournisseur. Petit budget : DeepSeek coûte 3 à 5 fois moins que Claude Sonnet, mais traite tes articles en Chine.</p>
         <KeyForm engine={st.engine} onSaved={done} />
         {keyed.length > 0 && (
           <p className="mt-2 text-ok">

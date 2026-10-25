@@ -426,7 +426,7 @@ function ProviderUrl({ id, settings: st }: { id: ProviderId; settings: Settings 
         onBlur={(e) => e.target.value.trim() !== p.url && save.mutate(e.target.value.trim())}
       />
       {save.error && <p className="mt-1 text-[12px] text-warn">{save.error.message}</p>}
-      {id === "compatible" && <p className="mt-1 text-[12px] text-ink-3">Groq, Together, Fireworks, Cerebras, Perplexity… : colle l'adresse de leur API compatible OpenAI, puis leur clé ci-dessus en choisissant ce fournisseur. Leurs modèles apparaissent ensuite dans la liste des rôles.</p>}
+      {id === "compatible" && <p className="mt-1 text-[12px] text-ink-3">Together, Fireworks, Cerebras, Perplexity… : colle l'adresse de leur API compatible OpenAI, puis leur clé ci-dessus en choisissant ce fournisseur. Leurs modèles apparaissent ensuite dans la liste des rôles.</p>}
     </div>
   );
 }
@@ -474,7 +474,7 @@ function ApiKeyGroup({ settings: st }: { settings: Settings }) {
         <input
           className={inputClass}
           type="password"
-          placeholder="Colle une clé : Anthropic, OpenAI, DeepSeek, Gemini, Mistral, Kimi, GLM, Qwen, Grok, OpenRouter…"
+          placeholder="Colle une clé : Anthropic, OpenAI, DeepSeek, Gemini, Mistral, Kimi, GLM, Qwen, Grok, Groq, OpenRouter…"
           value={key}
           onChange={(e) => {
             setKey(e.target.value);

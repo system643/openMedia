@@ -45,9 +45,11 @@ openMedia ne contient pas d'IA : il en utilise une, au choix. Le tutoriel du pre
 | **L'IA sur ce PC** | PC récent et puissant : 16 Go de mémoire au moins, idéalement une carte graphique | Gratuit | Installer Ollama et un modèle |
 | **Claude Code** (facultatif) | Ceux qui ont déjà un abonnement Claude Pro ou Max | Inclus dans l'abonnement (compte dans ses limites) | Installer Claude Code (voir plus bas) |
 
-Aucune n'est obligatoire : une seule suffit, et **Claude n'est pas nécessaire**. Les clés Anthropic, OpenAI, DeepSeek, Google Gemini, Mistral, Kimi, GLM (Z.ai), Qwen, Grok et OpenRouter fonctionnent, ainsi que tout fournisseur compatible OpenAI (Groq, Together…) : colle-les au même endroit, le fournisseur est reconnu tout seul.
+Aucune n'est obligatoire : une seule suffit, et **Claude n'est pas nécessaire**. Les clés Anthropic, OpenAI, DeepSeek, Google Gemini, Mistral, Kimi, GLM (Z.ai), Qwen, Grok (xAI), Groq et OpenRouter fonctionnent, ainsi que tout fournisseur compatible OpenAI (Together, Fireworks…) : colle-les au même endroit, le fournisseur est reconnu tout seul.
 
-**Mélanger** : dans Réglages › Moteur IA, chacun des trois rôles (tri, sujets, Directeur) a son modèle, en ligne ou sur ce PC. Par exemple le tri sur Ollama (gratuit) et les fiches chez Grok. **Petit budget** : DeepSeek coûte 3 à 5 fois moins que Claude Sonnet, mais traite tes articles en Chine, et son filtre de contenu peut refuser des sujets politiques sensibles. Dans Réglages › Moteur IA, le bouton « Tester » vérifie qu'un modèle marche avec openMedia, et `python -m openmedia banc --modeles a,b` compare des modèles sur un même jeu d'articles.
+**Mélanger** : dans Réglages › Moteur IA, chacun des trois rôles (tri, sujets, Directeur) a son modèle, en ligne ou sur ce PC. Par exemple le tri sur Ollama (gratuit) et les fiches chez Groq ou Grok.
+
+**Groq** (à ne pas confondre avec Grok, l'IA de xAI) fait tourner des modèles ouverts (GPT-OSS) très vite et pour pas cher. Son offre gratuite limite les tokens par minute : une fiche longue peut la dépasser, et openMedia le dit alors en clair. L'offre payante (Developer) lève cette limite. **Petit budget** : DeepSeek coûte 3 à 5 fois moins que Claude Sonnet, mais traite tes articles en Chine, et son filtre de contenu peut refuser des sujets politiques sensibles. Dans Réglages › Moteur IA, le bouton « Tester » vérifie qu'un modèle marche avec openMedia, et `python -m openmedia banc --modeles a,b` compare des modèles sur un même jeu d'articles.
 
 ### Obtenir une clé Anthropic (5 minutes)
 
@@ -153,9 +155,9 @@ Le premier passage démarre aussitôt : compte quelques minutes avant que la fic
 
 **L'IA sur ce PC.** Ollama (`127.0.0.1:11434`) et LM Studio (`127.0.0.1:1234`) sont détectés avec leurs modèles ; les adresses se changent dans `local_urls`. En mode local, tous les appels (tri, agents de sujet, Directeur, vérifications, sujets de lectures) passent par le modèle choisi, un à la fois, et rien ne part chez un fournisseur en ligne : si le serveur local ne répond pas, les passages s'arrêtent au lieu de se replier en ligne. Ollama est appelé par son API native avec un contexte de 32 768 tokens ; pour LM Studio, règle ce contexte au chargement du modèle. Pas de recherche web complémentaire en local. Un modèle d'au moins 14 milliards de paramètres est conseillé. Internet reste nécessaire pour la collecte (GDELT, unes et sites des médias, flux RSS).
 
-Tout se règle dans Réglages → Moteur IA. Colle une clé : le fournisseur est reconnu (Anthropic `sk-ant-`, OpenAI `sk-proj-`, Gemini `AIza`, Grok `xai-`, OpenRouter `sk-or-`, Mistral…), puis la clé est vérifiée. Une clé reconnue sur un compte sans crédit est gardée, avec un message qui le dit. Elle est rangée dans le Gestionnaire d'identifiants de Windows.
+Tout se règle dans Réglages → Moteur IA. Colle une clé : le fournisseur est reconnu (Anthropic `sk-ant-`, OpenAI `sk-proj-`, Gemini `AIza`, Grok `xai-`, Groq `gsk_`, OpenRouter `sk-or-`, Mistral…), puis la clé est vérifiée. Une clé reconnue sur un compte sans crédit est gardée, avec un message qui le dit. Elle est rangée dans le Gestionnaire d'identifiants de Windows.
 
-| | Claude Code installé | Clé API (Anthropic, OpenAI, DeepSeek, Gemini, Mistral, Kimi, GLM, Qwen, Grok, OpenRouter, ou tout fournisseur compatible OpenAI) |
+| | Claude Code installé | Clé API (Anthropic, OpenAI, DeepSeek, Gemini, Mistral, Kimi, GLM, Qwen, Grok, Groq, OpenRouter, ou tout fournisseur compatible OpenAI) |
 |---|---|---|
 | Ce qu'il faut | `npm install -g @anthropic-ai/claude-code`, puis lancer `claude` une fois pour te connecter | Une clé du fournisseur |
 | Facturation | Ton abonnement Claude : le coût est affiché au tarif de l'API, mais il n'est pas facturé en plus ; il compte dans les limites de ton abonnement | À l'usage. Le budget mensuel arrête les passages planifiés au-delà ; ceux que tu lances toi-même restent possibles |

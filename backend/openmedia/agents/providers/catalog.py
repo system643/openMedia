@@ -10,7 +10,7 @@ de lui-même si un modèle refuse un paramètre.
 
 Prix en $ par million de tokens : (entrée, sortie, lecture du cache), relevés sur les pages
 officielles le 19/10/2026 (Anthropic, OpenAI, Google, Mistral) et le 23/10/2026 (DeepSeek,
-Moonshot, Z.ai ; xAI le 25/10/2026 ; Qwen d'après la liste publique d'OpenRouter). Les modèles d'OpenRouter
+Moonshot, Z.ai ; xAI et Groq le 25/10/2026 ; Qwen d'après la liste publique d'OpenRouter). Les modèles d'OpenRouter
 prennent leur prix en direct.
 """
 
@@ -47,7 +47,7 @@ class Provider:
     # `object` (mode « objet JSON », le schéma est écrit dans la consigne).
     structured: str = "schema"
     # Réglage de la réflexion : `openai` (API Responses), `gemini`, `openrouter`, `deepseek`
-    # (thinking + reasoning_effort), `thinking` (Z.ai), `kimi`, `qwen`, ou `none`.
+    # (thinking + reasoning_effort), `thinking` (Z.ai), `kimi`, `qwen`, `groq`, ou `none`.
     reasoning: str = "none"
     thinks: bool = False  # peut réfléchir avant de répondre : il lui faut une marge de tokens
     max_tokens_param: str = "max_tokens"
@@ -70,6 +70,7 @@ PROVIDERS: dict[str, Provider] = {
         Provider("zai", "GLM (Z.ai)", "https://api.z.ai/api/paas/v4", ("ZAI_API_KEY", "ZHIPU_API_KEY"), False, False, "xxxx.yyyy", structured="object", reasoning="thinking", thinks=True, region="en Chine", policy_url="https://docs.z.ai/legal-agreement/privacy-policy"),
         Provider("qwen", "Qwen (Alibaba Cloud)", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1", ("DASHSCOPE_API_KEY", "QWEN_API_KEY"), False, False, "sk-…", structured="object", reasoning="qwen", thinks=True, region="à Singapour", policy_url="https://www.alibabacloud.com/help/en/legal/latest/alibaba-cloud-international-website-privacy-policy", url_setting=True),
         Provider("xai", "Grok (xAI)", "https://api.x.ai/v1", ("XAI_API_KEY",), False, False, "xai-…", thinks=True, region="aux États-Unis", policy_url="https://x.ai/legal/privacy-policy"),
+        Provider("groq", "Groq", "https://api.groq.com/openai/v1", ("GROQ_API_KEY",), False, False, "gsk_…", reasoning="groq", thinks=True, max_tokens_param="max_completion_tokens", region="aux États-Unis", policy_url="https://groq.com/privacy-policy/"),
         Provider("compatible", "Autre fournisseur (compatible OpenAI)", "", ("OPENMEDIA_COMPATIBLE_KEY",), False, False, "selon le fournisseur", thinks=True, region="", url_setting=True),
     )
 }
@@ -132,6 +133,10 @@ MODELS: list[ModelInfo] = [
     ModelInfo("xai:grok-4.7", "Grok 4.7", "premium", (2.00, 6.00, 0.50)),
     ModelInfo("xai:grok-4.3", "Grok 4.3", "equilibre", (1.25, 2.50, 0.20)),
     ModelInfo("xai:grok-build-0.1", "Grok Build 0.1", "rapide", (1.00, 2.00, 0.20), featured=False),
+    # Groq (puces LPU, très rapide) : modèles ouverts ; Llama est facturé sur devis, donc absent
+    ModelInfo("groq:openai/gpt-oss-120b", "GPT-OSS 120B (Groq)", "equilibre", (0.15, 0.60, 0.15)),
+    ModelInfo("groq:qwen/qwen3.8-27b", "Qwen 3.8 27B (Groq, préversion)", "equilibre", (0.80, 4.00, 0.80), featured=False),
+    ModelInfo("groq:openai/gpt-oss-20b", "GPT-OSS 20B (Groq)", "rapide", (0.075, 0.30, 0.075)),
     # OpenRouter : une seule clé pour les modèles des autres ; le prix réel est lu en direct.
     ModelInfo("openrouter:anthropic/claude-fable-5.1", "Fable 5.1 (OpenRouter)", "maximum", None),
     ModelInfo("openrouter:anthropic/claude-opus-5.5", "Opus 5.5 (OpenRouter)", "premium", None),

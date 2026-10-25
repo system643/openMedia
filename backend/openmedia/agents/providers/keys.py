@@ -34,6 +34,8 @@ def detect_provider(key: str) -> list[str]:
         return ["gemini"]
     if k.startswith("xai-"):
         return ["xai"]
+    if k.startswith("gsk_"):
+        return ["groq"]
     if k.startswith(("sk-proj-", "sk-svcacct-", "sk-admin-")):
         return ["openai"]
     if re.fullmatch(r"[0-9a-f]{32}\.[A-Za-z0-9]{8,32}", k):  # identifiant.secret

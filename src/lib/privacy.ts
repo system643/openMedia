@@ -18,6 +18,7 @@ export const POLICIES: Record<ProviderId | "claude_code", { label: string; url: 
   zai: { label: "GLM (Z.ai)", url: "https://docs.z.ai/legal-agreement/privacy-policy" },
   qwen: { label: "Qwen (Alibaba Cloud)", url: "https://www.alibabacloud.com/help/en/legal/latest/alibaba-cloud-international-website-privacy-policy" },
   xai: { label: "Grok (xAI)", url: "https://x.ai/legal/privacy-policy" },
+  groq: { label: "Groq", url: "https://groq.com/privacy-policy/" },
   compatible: { label: "ton autre fournisseur", url: "" },
 };
 

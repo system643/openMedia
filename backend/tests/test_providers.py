@@ -23,6 +23,7 @@ SUGGESTION = {"action": "new_topic", "topic_id": None, "topic_name": "Écoles", 
 
 
 def test_detect_provider():
+    assert detect_provider("gsk_abc") == ["groq"]
     assert detect_provider("sk-ant-api03-xxx") == ["anthropic"]
     assert detect_provider("sk-or-v1-abc") == ["openrouter"]
     assert detect_provider("AIzaSyD-abc") == ["gemini"]

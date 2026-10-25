@@ -234,7 +234,7 @@ export interface Settings {
   provider_urls: Record<string, string>;
 }
 
-export type ProviderId = "anthropic" | "openai" | "gemini" | "openrouter" | "mistral" | "deepseek" | "moonshot" | "zai" | "qwen" | "xai" | "compatible";
+export type ProviderId = "anthropic" | "openai" | "gemini" | "openrouter" | "mistral" | "deepseek" | "moonshot" | "zai" | "qwen" | "xai" | "groq" | "compatible";
 
 export interface ProviderInfo {
   label: string;

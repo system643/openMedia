@@ -11,7 +11,7 @@ shutil.copy(Path(__file__).parent / "fixtures" / "domain_quality_sample.csv", Pa
 os.environ["OPENMEDIA_NO_SCHEDULER"] = "1"
 os.environ["OPENMEDIA_EXTRA_HOSTS"] = "testserver"  # nom d'hôte du TestClient
 os.environ.pop("ANTHROPIC_API_KEY", None)
-for _var in ("OPENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY", "OPENROUTER_API_KEY", "MISTRAL_API_KEY", "DEEPSEEK_API_KEY", "MOONSHOT_API_KEY", "KIMI_API_KEY", "ZAI_API_KEY", "ZHIPU_API_KEY", "DASHSCOPE_API_KEY", "QWEN_API_KEY", "XAI_API_KEY", "OPENMEDIA_COMPATIBLE_KEY"):
+for _var in ("OPENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY", "OPENROUTER_API_KEY", "MISTRAL_API_KEY", "DEEPSEEK_API_KEY", "MOONSHOT_API_KEY", "KIMI_API_KEY", "ZAI_API_KEY", "ZHIPU_API_KEY", "DASHSCOPE_API_KEY", "QWEN_API_KEY", "XAI_API_KEY", "GROQ_API_KEY", "OPENMEDIA_COMPATIBLE_KEY"):
     os.environ.pop(_var, None)
 
 # Les clés ne touchent jamais le Gestionnaire d'identifiants réel pendant les tests.

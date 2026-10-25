@@ -12,9 +12,12 @@ CONTEXT = re.compile(r"context|too long|too many tokens|maximum.*tokens|n_ctx|pr
 # Crédit épuisé, dit autrement selon les fournisseurs (DeepSeek : 402 « Insufficient Balance » ;
 # Kimi, GLM, Qwen : 429 ou 400 avec un code de solde ou d'arriéré ; xAI : 403 pour une équipe
 # qui n'a encore ni crédit ni licence).
-CREDIT = re.compile(r"insufficient.?balance|insufficient.?quota|exceeded_current_quota|balance is not enough|arrearage|account.*(?:overdue|suspended)|余额不足|credit|licenses?", re.I)
+CREDIT = re.compile(r"insufficient.?balance|insufficient.?quota|exceeded_current_quota|balance is not enough|arrearage|account.*(?:overdue|suspended)|余额不足|credit|licenses?\b", re.I)
 # Une clé fausse, dite avec un autre statut que 401/403 (xAI répond 400).
 BAD_KEY = re.compile(r"(?:incorrect|invalid|wrong) (?:api )?key|api key (?:is )?(?:invalid|not valid)", re.I)
+# Le plafond de débit d'une offre (Groq gratuit : quelques milliers de tokens par minute), qu'une
+# seule demande longue peut dépasser : ce n'est pas la taille du contexte du modèle.
+PER_MINUTE = re.compile(r"tokens per minute|\bTPM\b|tokens per day|\bTPD\b", re.I)
 # Le filtre de contenu des fournisseurs : fréquent sur les sujets politiques sensibles pour
 # les fournisseurs chinois (DeepSeek « Content Exists Risk », Qwen « data_inspection_failed »,
 # GLM code 1301, Kimi « high risk »).
@@ -34,6 +37,8 @@ def http_error(label: str, status: int, detail: str = "", *, local: bool = False
         return NoApiKey(f"La clé {label} est refusée : vérifie-la ou remplace-la dans Réglages › Moteur IA.")
     if status == 402 or CREDIT.search(detail):
         return LLMError(f"Crédit épuisé chez {label} : recharge ton compte, ou choisis un autre moteur dans Réglages › Moteur IA.")
+    if status in (413, 429) and PER_MINUTE.search(detail):
+        return LLMError(f"La demande dépasse le débit permis par ton offre {label} (tokens par minute ou par jour) : passe à une offre payante chez {label}, ou confie ce rôle à un autre modèle dans Réglages › Moteur IA.")
     if CONTEXT.search(detail) or status == 413:
         if local:
             return LLMError(f"La demande dépasse la mémoire de contexte du modèle de {label} : règle la longueur de contexte à 32 768 tokens au moins (dans LM Studio, au chargement du modèle), ou choisis un modèle plus grand.")
