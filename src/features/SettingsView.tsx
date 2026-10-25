@@ -186,12 +186,12 @@ export function SettingsView({ section = "general" }: { section?: SettingsSectio
 
         {current.id === "rigueur" && (
           <Group footer="Un fait n'est « confirmé » qu'avec deux sources indépendantes : une dépêche reprise ou un même groupe de presse ne comptent qu'une fois, et les réseaux sociaux jamais.">
-            <Row label="Sources indépendantes visées" hint="En dessous, l'agent complète sa collecte par la recherche web de son modèle, chez les fournisseurs qui en ont une (Anthropic, OpenAI, Gemini, OpenRouter).">
+            <Row label="Sources indépendantes visées" hint="En dessous, l'agent complète sa collecte par la recherche web de son modèle (Anthropic, OpenAI, Gemini, OpenRouter) ; avec les autres fournisseurs et l'IA de ce PC, par Bing Actualités, sans frais.">
               <select className={`${inputClass} w-20`} value={st.min_independent_sources} onChange={(e) => set({ min_independent_sources: Number(e.target.value) })}>
                 {[2, 3, 4, 5, 6].map((n) => <option key={n}>{n}</option>)}
               </select>
             </Row>
-            <Row label="Recherche complémentaire" hint="Environ 1 centime par recherche, seulement quand la couverture est trop mince.">
+            <Row label="Recherche complémentaire" hint="Seulement quand la couverture est trop mince : environ 1 centime par recherche web du modèle, gratuit par Bing Actualités.">
               <Toggle label="Recherche complémentaire" checked={st.claude_search_fallback} onChange={(v) => set({ claude_search_fallback: v })} />
             </Row>
           </Group>

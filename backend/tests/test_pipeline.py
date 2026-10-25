@@ -241,3 +241,31 @@ async def test_quiet_day_brief_costs_nothing(offline):
     finally:
         director_mod.latest_fiches = pairs_before
     assert brief.content["points"] == [] and brief.content["quiet_topics"] == ["Calme plat"]
+
+
+async def test_bing_alone_feeds_a_run_when_gdelt_and_fronts_are_empty(offline, monkeypatch):
+    """Un moteur sans recherche web, GDELT saturé, rien dans les unes : Bing Actualités suffit."""
+    at = now()
+
+    async def nothing(*a, **k):
+        return []
+
+    async def bing(queries, since, per_lang=3):
+        return [
+            Candidate(url="https://www.ouest-france.fr/x", title="Écoles : le plan de rénovation présenté", origin="bing", source_name="Ouest-France", published_at=at - timedelta(hours=4)),
+            Candidate(url="https://www.reuters.com/y", title="France school renovation plan unveiled", origin="bing", source_name="Reuters", published_at=at - timedelta(hours=6)),
+        ]
+
+    monkeypatch.setattr(topic_agent.fronts, "collect", nothing)
+    monkeypatch.setattr(topic_agent.gdelt, "search", nothing)
+    monkeypatch.setattr("openmedia.collect.bing_news.search", bing)
+    with session() as s:
+        t = Topic(name="Écoles Bing", prompt="Suis le plan de rénovation des écoles")
+        s.add(t)
+        s.commit()
+        s.refresh(t)
+    result = await topic_agent.run_topic(t.id, llm=FakeLLM())
+    assert not result["nothing_new"]
+    with session() as s:
+        run = s.exec(__import__("sqlmodel").select(Run).where(Run.topic_id == t.id)).first()
+    assert any(line.startswith("Collecte : ") and "Bing Actualités 2" in line for line in run.log), run.log

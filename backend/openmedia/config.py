@@ -80,6 +80,7 @@ class Settings(BaseModel):
     # Source du suivi : elle reçoit les mots-clés des sujets. (Google News a été retiré : son
     # robots.txt interdit les flux de recherche et le décodage des liens.)
     gdelt: bool = True
+    bing_news: bool = True  # Bing Actualités : la recherche datée avec GDELT, sans clé
     # Premier lancement : le tutoriel, et l'accord sur les conditions de fonctionnement (le
     # suivi par une IA). Avant cet accord, le moteur ne fait aucun appel réseau de lui-même.
     onboarding_done: bool = False

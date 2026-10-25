@@ -7,7 +7,7 @@ from __future__ import annotations
 import math
 from datetime import datetime, timedelta
 
-from ..collect import gdelt
+from ..collect import news_search
 from ..collect.dedupe import detect_wire, simhash
 from ..collect.extract import fetch_many
 from ..collect.base import Candidate
@@ -108,14 +108,14 @@ async def check_article(article_id: int, llm: LLM, meter: RunMeter, *, coverage_
 
 
 async def find_corroboration(llm: LLM, meter: RunMeter, model: str, queries: dict[str, list[str]], since: datetime, *, days: int | None = None, exclude: set[int] | None = None, web_prompt: str | None = None, limit: int = 24) -> list[tuple[Article, Source]]:
-    """D'autres médias sur les mêmes faits : GDELT, puis la recherche web du
+    """D'autres médias sur les mêmes faits : GDELT et Bing Actualités, puis la recherche web du
     modèle (`web_prompt`) si moins de deux groupes de presse répondent. Les articles déjà en
     base sont repris sans être retéléchargés."""
     from .topic_agent import gather_articles, select_candidates  # import local : évite un cycle
 
     exclude = exclude or set()
     days = days or max(1, math.ceil((now() - since).total_seconds() / 86400))
-    cands = await gdelt.search({lang: qs for lang, qs in queries.items() if qs}, days, per_lang=2)
+    cands = await news_search.search({lang: qs for lang, qs in queries.items() if qs}, days, per_lang=2)
     pseudo = Topic(id=0, name="recoupement", prompt="", languages=list(queries))
     found = await gather_articles(pseudo, {}, since, now(), extra=select_candidates(cands, since, limit=limit))
     others = [(a, s) for a, s, _ in found if a.id not in exclude]

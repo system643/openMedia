@@ -189,7 +189,7 @@ async def test_factcheck_marks_article_claims(monkeypatch):
         return []
 
     monkeypatch.setattr("openmedia.agents.topic_agent.gather_articles", gather)
-    monkeypatch.setattr(factcheck.gdelt, "search", no_search)
+    monkeypatch.setattr(factcheck.news_search, "search", no_search)
     result = await factcheck.factcheck_reading(r.id, llm=FakeLLM())
     assert result["status"] == "ok"
     [claim] = result["claims"]

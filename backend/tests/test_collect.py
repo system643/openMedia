@@ -1,8 +1,13 @@
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+import pytest
 import respx
 
-from openmedia.agents.topic_agent import select_candidates
-from openmedia.collect import fronts, gdelt, rss
+from openmedia.agents.llm import RunMeter
+from openmedia.agents.topic_agent import collect_summary, select_candidates
+from openmedia.collect import bing_news, claude_search, fronts, gdelt, news_search, rss
+from openmedia.config import update_settings
 from openmedia.collect.base import Candidate, parse_date
 
 FEED = """<?xml version="1.0"?><rss version="2.0"><channel>
@@ -121,3 +126,70 @@ async def test_open_ratings_are_downloaded_only_after_consent(monkeypatch, tmp_p
     finally:
         update_settings({"consent_at": "2026-01-01T00:00:00+00:00"})
         quality.dataset.cache_clear()
+
+
+# ── Bing Actualités : la recherche datée sans clé, quel que soit le moteur IA ──
+
+BING = (Path(__file__).parent / "fixtures" / "bing_news.xml").read_bytes()  # au format exact de Bing (relevé le 25/10/2026), contenu fictif
+
+
+def test_bing_feed_gives_real_links_dates_and_sources():
+    found = bing_news.parse(BING, "fr")
+    assert len(found) == 10  # 12 résultats, dont 2 reprises MSN écartées
+    assert all(c.origin == "bing" and c.url.startswith("https://") and "bing.com" not in c.url and "msn.com" not in c.url for c in found)
+    monde = next(c for c in found if c.source_name == "Le Monde")
+    assert monde.url.startswith("https://www.lemonde.fr/") and monde.published_at == datetime(2026, 10, 23, 9, 21, tzinfo=timezone.utc) and monde.snippet
+    assert bing_news.real_url("https://ex.fr/direct") == "https://ex.fr/direct"
+
+
+@pytest.fixture
+def bing_on():
+    bing_news._cache.clear()
+    update_settings({"bing_news": True})
+    yield
+    update_settings({"bing_news": False})
+    bing_news._cache.clear()
+
+
+@respx.mock
+async def test_bing_search_keeps_the_window_and_can_be_switched_off(monkeypatch, bing_on):
+    monkeypatch.setattr(bing_news.asyncio, "sleep", _no_sleep)
+    route = respx.get(url__startswith=bing_news.API).respond(200, content=BING)
+    found = await bing_news.search({"fr": ["budget de la Sécu"]}, datetime(2026, 10, 23, tzinfo=timezone.utc))
+    assert found and all(c.published_at >= datetime(2026, 10, 23, tzinfo=timezone.utc) for c in found)
+    assert "setlang=fr-FR" in str(route.calls[0].request.url) and "interval" in str(route.calls[0].request.url)
+    assert "interval%3D%227%22" in bing_news.query_url("x", "fr", 1) and "interval%3D%228%22" in bing_news.query_url("x", "fr", 3) and "qft" not in bing_news.query_url("x", "fr", 90)
+    update_settings({"bing_news": False})
+    bing_news._cache.clear()
+    assert await bing_news.search({"fr": ["budget"]}, datetime(2026, 10, 1, tzinfo=timezone.utc)) == [] and route.call_count == 1
+
+
+@respx.mock
+async def test_bing_takes_over_when_gdelt_is_saturated(monkeypatch, bing_on):
+    monkeypatch.setattr(gdelt.asyncio, "sleep", _no_sleep)
+    monkeypatch.setattr(bing_news.asyncio, "sleep", _no_sleep)
+    monkeypatch.setattr(gdelt, "_cool_until", 0.0)
+    respx.get(url__startswith=gdelt.API).respond(429, text="Please limit requests to one every 5 seconds")
+    respx.get(url__startswith=bing_news.API).respond(200, content=BING)
+    found = await news_search.search({"fr": ["budget de la Sécu"]}, 30, per_lang=2)
+    assert len(found) == 10 and len({c.url for c in found}) == 10  # deux fois le même flux : chaque article une seule fois
+    assert "GDELT 0 (saturé)" in collect_summary(found) and "Bing Actualités 10" in collect_summary(found)
+    monkeypatch.setattr(gdelt, "_cool_until", 0.0)
+
+
+@respx.mock
+async def test_complement_search_without_model_search_uses_bing(monkeypatch, bing_on):
+    """Groq, Grok, Mistral, DeepSeek… n'ont pas de recherche web : le complément passe par Bing."""
+    monkeypatch.setattr(bing_news.asyncio, "sleep", _no_sleep)
+    route = respx.get(url__startswith=bing_news.API).respond(200, content=BING)
+
+    class NoSearch:
+        async def search(self, meter, *, model, prompt, max_uses=3):
+            meter.note("recherche web indisponible chez Groq")
+            return []
+
+    meter = RunMeter()
+    found = await claude_search.search(NoSearch(), meter, "groq:openai/gpt-oss-120b", "Budget de la Sécu", ["budget Sécu"], datetime(2026, 10, 1, tzinfo=timezone.utc), by_lang={"fr": ["budget Sécu", "PLFSS 2027"], "en": ["French social security budget"]})
+    assert found and "Bing Actualités" in meter.log[-1]
+    sent = [str(c.request.url) for c in route.calls]
+    assert any("Budget+de+la+S" in u for u in sent) and any("setlang=en-US" in u for u in sent)  # le nom court du sujet, et chaque langue

@@ -93,7 +93,7 @@ export interface Flow {
 export function coreFlows(st: Settings | undefined): Flow[] {
   const ai = aiTarget(st);
   const to = ai.local ? "reste sur ce PC" : listNames(ai.names);
-  const search = [st?.gdelt !== false && "GDELT"].filter(Boolean) as string[];
+  const search = [st?.gdelt !== false && "GDELT", st?.bing_news !== false && "Bing Actualités (Microsoft)"].filter(Boolean) as string[];
   const flows: Flow[] = [
     { what: "La consigne de chaque sujet que tu suis", to, when: "à la création, puis à chaque passage" },
     { what: "Les articles trouvés : titre, média et extraits du texte", to, when: "à chaque passage" },
@@ -161,7 +161,7 @@ export const PAGE_WATCH =
 
 /** Ce qui reste en ligne même avec l'IA sur ce PC. */
 export function stillOnline(st: Settings | undefined): string[] {
-  const out = [st?.gdelt !== false && "GDELT", "tes flux RSS", "les sites des médias, pour lire leurs unes et leurs articles"].filter(Boolean) as string[];
+  const out = [st?.gdelt !== false && "GDELT", st?.bing_news !== false && "Bing Actualités", "tes flux RSS", "les sites des médias, pour lire leurs unes et leurs articles"].filter(Boolean) as string[];
   if (st?.brief_audio_auto) out.push("la voix du Brief (Microsoft)");
   if (st?.ntfy_topic) out.push("les notifications ntfy");
   return out;

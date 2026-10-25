@@ -15,6 +15,11 @@ Données utilisées (non redistribuées dans ce dépôt)
   interrogé par son API DOC 2.0. Les conditions de GDELT demandent une citation
   du GDELT Project et un lien vers https://www.gdeltproject.org/.
 
+- Bing Actualités (Microsoft, https://www.bing.com/news) : recherche d'articles
+  de presse par son flux RSS public (format=rss), sans clé. Microsoft autorise
+  ces résultats « dans un agrégateur RSS pour votre usage personnel et non
+  commercial » ; openMedia les lit sur le PC de chaque lecteur, pour lui seul.
+
 - Notes de fiabilité des domaines : Lin, H., Lasser, J., Lewandowsky, S.,
   Cole, R., Gully, A., Rand, D. G., & Pennycook, G. (2023). High level of
   correspondence across different news domain quality rating sets. PNAS Nexus,

@@ -19,7 +19,7 @@ from datetime import datetime, timedelta, timezone
 from sqlmodel import select
 
 from .. import events
-from ..collect import claude_search, fronts, gdelt, research, rss, social
+from ..collect import bing_news, claude_search, fronts, gdelt, news_search, research, rss, social
 from ..collect.base import Candidate
 from ..collect.dedupe import canonical_url, cluster, detect_wire, same_title, simhash
 from ..collect.extract import fetch_many
@@ -132,7 +132,7 @@ async def collect(topic: Topic, spec: dict, since: datetime, at: datetime) -> li
         queries["fr"] = spec.get("queries_fr", [])[:3]
     if "en" in topic.languages:
         queries["en"] = spec.get("queries_en", [])[:3]
-    cands = await gdelt.search(queries, days)
+    cands = await news_search.search(queries, days)
     cands += await fronts.collect(spec.get("keywords", []), since, list(queries))
     cands += await rss.collect(topic.feeds, spec.get("keywords", []), since)
     cands += await social.collect(topic.social or {}, queries.get("fr", []) + queries.get("en", []), spec.get("keywords", []), since)
@@ -178,8 +178,31 @@ def _upsert_articles(pairs, since: datetime) -> list[tuple[Article, Source, str]
     return [(a, registry.ensure(a.domain, kind="recherche" if a.kind == "recherche" else None), origin) for a, origin in out]
 
 
-async def gather_articles(topic: Topic, spec: dict, since: datetime, at: datetime, extra: list[Candidate] | None = None) -> list[tuple[Article, Source, str]]:
+ORIGIN_LABEL = {"gdelt": "GDELT", "bing": "Bing Actualités", "une": "unes des médias", "rss": "flux RSS", "reddit": "Reddit", "hn": "Hacker News", "telegram": "Telegram", "drop": "liens glissés", "recherche": "bases de recherche"}
+
+
+def collect_summary(cands: list[Candidate]) -> str:
+    """« Collecte : GDELT 0 (saturé), Bing Actualités 24, unes des médias 3 » : ce que chaque
+    source a apporté, pour qu'un sujet vide s'explique."""
+    counts: dict[str, int] = defaultdict(int)
+    for c in cands:
+        counts["recherche" if c.extra.get("research") else c.origin] += 1
+    parts = []
+    if gdelt.enabled():
+        parts.append(f"GDELT {counts.pop('gdelt', 0)}" + (" (saturé)" if gdelt.resting() else ""))
+    if bing_news.enabled():
+        parts.append(f"Bing Actualités {counts.pop('bing', 0)}")
+    parts += [f"{ORIGIN_LABEL.get(o, o)} {n}" for o, n in counts.items() if n]
+    return "Collecte : " + ", ".join(parts) if parts else "Collecte : aucune source active"
+
+
+async def gather_articles(topic: Topic, spec: dict, since: datetime, at: datetime, extra: list[Candidate] | None = None, note=None) -> list[tuple[Article, Source, str]]:
+    """`note` : reçoit le bilan de la collecte (« Collecte : … »), pour le journal du passage."""
     cands = extra if extra is not None else await collect(topic, spec, since, at)
+    if note is not None and extra is None:
+        note(collect_summary(cands))
+        if not cands:
+            note("Aucune source n'a répondu : vérifie ta connexion à Internet, ou élargis les mots-clés du sujet.")
     with session() as s:
         known = {a.url for a in s.exec(select(Article).join(TopicArticle, TopicArticle.article_id == Article.id).where(TopicArticle.topic_id == topic.id)).all()}
     # Recherche : un serveur comme arXiv héberge des milliers d'équipes, pas un seul « média ».
@@ -313,9 +336,9 @@ async def run_topic(topic_id: int, *, dry: bool = False, llm: LLM | None = None)
         spec = await ensure_spec(llm, meter, topic, settings)
         since = window(topic, at, topic.run_every_days or settings.run_every_days or 1)
         stage("collect", f"Collecte depuis le {since:%d/%m %H:%M}")
-        found = await gather_articles(topic, spec, since, at)
+        found = await gather_articles(topic, spec, since, at, note=lambda line: stage("collect", line))
         if gdelt.resting():
-            stage("collect", "GDELT limite les requêtes en ce moment : collecte partielle (unes des médias et flux RSS)")
+            stage("collect", "GDELT limite les requêtes en ce moment : collecte partielle (Bing Actualités, unes des médias et flux RSS)")
         research_topic = topic.kind == "recherche"
         origins = {a.id: o for a, _, o in found}
         # Une reprise telle quelle d'un article déjà retenu n'apprend rien : elle n'est pas triée.
@@ -336,7 +359,8 @@ async def run_topic(topic_id: int, *, dry: bool = False, llm: LLM | None = None)
         independent = {independence_key(*meta[i]) for i in kept}
         if settings.claude_search_fallback and not dry and not research_topic and len(independent) < settings.min_independent_sources:
             stage("search", f"Seulement {len(independent)} source(s) indépendante(s) : recherche complémentaire")
-            extra = await claude_search.search(llm, meter, model, spec.get("summary", topic.name), spec.get("queries_fr", []) + spec.get("queries_en", []), since)
+            by_lang = {lang: spec.get(f"queries_{lang}", []) for lang in ("fr", "en") if lang in topic.languages}
+            extra = await claude_search.search(llm, meter, model, spec.get("summary", topic.name), spec.get("queries_fr", []) + spec.get("queries_en", []), since, by_lang=by_lang)
             more = await gather_articles(topic, spec, since, at, extra=extra)
             more = [(a, s, o) for a, s, o in more if a.id not in meta]
             meta.update({a.id: (a, s) for a, s, _ in more})

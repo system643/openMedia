@@ -18,7 +18,7 @@ class Candidate:
 
     url: str
     title: str
-    origin: str  # gdelt | une | rss | drop | claude_search (google_news : avant le 22/10/2026)
+    origin: str  # gdelt | bing | une | rss | drop | claude_search (google_news : avant le 22/10/2026)
     source_name: str = ""
     published_at: datetime | None = None
     lang: str = ""

@@ -40,7 +40,8 @@ keyring.set_keyring(MemoryKeyring())
 
 
 # Les tests supposent les conditions de fonctionnement acceptées (le tutoriel est passé) ;
-# ceux qui vérifient le consentement l'effacent eux-mêmes.
+# ceux qui vérifient le consentement l'effacent eux-mêmes. Bing Actualités est coupé : aucun
+# test n'interroge le vrai Bing (ceux qui le testent l'activent sur un faux serveur).
 from openmedia.config import update_settings  # noqa: E402
 
-update_settings({"consent_at": "2026-01-01T00:00:00+00:00"})
+update_settings({"consent_at": "2026-01-01T00:00:00+00:00", "bing_news": False})

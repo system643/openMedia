@@ -86,7 +86,7 @@ class Article(SQLModel, table=True):
 class TopicArticle(SQLModel, table=True):
     topic_id: int = Field(foreign_key="topic.id", primary_key=True)
     article_id: int = Field(foreign_key="article.id", primary_key=True)
-    origin: str = ""  # gdelt | une | rss | drop | claude_search (google_news : avant le 22/10/2026)
+    origin: str = ""  # gdelt | bing | une | rss | drop | claude_search (google_news : avant le 22/10/2026)
     relevance: float = 0.0
     nature: str = ""  # fait | analyse | opinion | reaction | rumeur
     sensationalism: float = 0.0

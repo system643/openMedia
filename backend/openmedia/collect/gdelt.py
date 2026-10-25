@@ -69,6 +69,8 @@ async def _get(http, url: str, lang: str | None) -> list[Candidate]:
             if r.status_code == 429:
                 if attempt:
                     _cool_until = time.monotonic() + COOL_DOWN
+                else:
+                    await asyncio.sleep(5)  # un premier refus : 10 s de pause en tout avant de réessayer
                 continue
             if r.headers.get("content-type", "").startswith("application/json"):
                 return parse(r.json(), lang or "")

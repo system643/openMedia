@@ -371,9 +371,9 @@ async def preview_topic(body: TopicIn):
     llm, meter = get_llm(), RunMeter()
     spec = await build_spec(llm, meter, body.model or settings.models.topic, body.prompt, now())
     log_run("spec", meter)
-    from ..collect import gdelt
+    from ..collect import news_search
 
-    cands = await gdelt.search({"fr": spec.queries_fr[:2], "en": spec.queries_en[:2]}, 7, per_lang=2)
+    cands = await news_search.search({"fr": spec.queries_fr[:2], "en": spec.queries_en[:2]}, 7, per_lang=2)
     return {"spec": spec.model_dump(), "cost_usd": round(meter.cost_usd, 4), "sample": [{"title": c.title, "source": c.source_name, "published_at": c.published_at} for c in cands[:20]]}
 
 

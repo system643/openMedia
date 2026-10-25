@@ -143,7 +143,7 @@ async def test_coverage_without_claims(monkeypatch):
         return []
 
     monkeypatch.setattr("openmedia.agents.topic_agent.gather_articles", gather_articles)
-    monkeypatch.setattr(factcheck.gdelt, "search", no_search)
+    monkeypatch.setattr(factcheck.news_search, "search", no_search)
     from openmedia.agents.llm import RunMeter
 
     result, pairs = await factcheck.check_article(a.id, FakeLLM(), RunMeter(), coverage_anyway=True)

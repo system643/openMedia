@@ -66,7 +66,7 @@ def others(monkeypatch):
     async def gather(topic, spec, since, at, extra=None):
         return [(x, registry.lookup(x.domain), "gdelt") for x in (a, b, c)]
 
-    monkeypatch.setattr(quickcheck.gdelt, "search", search)
+    monkeypatch.setattr(quickcheck.news_search, "search", search)
     monkeypatch.setattr("openmedia.agents.topic_agent.gather_articles", gather)
     return main, a, b, c
 
@@ -162,7 +162,7 @@ async def test_headlines_when_links_cannot_be_decoded(monkeypatch):
     async def nothing(*a, **k):
         return []
 
-    monkeypatch.setattr(quickcheck.gdelt, "search", search)
+    monkeypatch.setattr(quickcheck.news_search, "search", search)
     monkeypatch.setattr("openmedia.agents.topic_agent.gather_articles", nothing)
     llm = FakeLLM(None)
 

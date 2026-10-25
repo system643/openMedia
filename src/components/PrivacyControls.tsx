@@ -90,7 +90,8 @@ export function CoreFlows({ settings: st, onChange }: { settings: Settings | und
         ))}
       </ul>
       <div className="border-t border-line bg-fill/40 px-4 py-1">
-        <SwitchRow label="Chercher dans GDELT" hint="L'index mondial et ouvert des articles de presse (gdeltproject.org), la recherche datée d'openMedia. Sans lui, il ne reste que les unes des médias et tes flux RSS : beaucoup moins de sources, et plus de pouls les jours sans passage." checked={st?.gdelt ?? true} onChange={(v) => onChange({ gdelt: v })} />
+        <SwitchRow label="Chercher dans GDELT" hint="L'index mondial et ouvert des articles de presse (gdeltproject.org), la recherche datée d'openMedia. Sans lui, il reste Bing Actualités, les unes des médias et tes flux RSS : moins de sources, et plus de pouls les jours sans passage." checked={st?.gdelt ?? true} onChange={(v) => onChange({ gdelt: v })} />
+        <SwitchRow label="Chercher dans Bing Actualités" hint="Les mots-clés de tes sujets sont cherchés dans Bing Actualités (Microsoft), sans compte ni clé. Il prend le relais quand GDELT est saturé, et sert de recherche complémentaire avec les IA qui n'ont pas de recherche web (Groq, Grok, Mistral, DeepSeek, l'IA de ce PC…). Sans lui, un sujet peut rester vide." checked={st?.bing_news ?? true} onChange={(v) => onChange({ bing_news: v })} />
         {!ai.local && <SwitchRow label="Recherche web complémentaire" hint="Quand un sujet est peu couvert, le fournisseur d'IA cherche d'autres sources sur le web." checked={st?.claude_search_fallback ?? true} onChange={(v) => onChange({ claude_search_fallback: v })} />}
       </div>
     </div>

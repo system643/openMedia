@@ -64,9 +64,9 @@ async def _main(args) -> None:
         _print(b.model_dump() if b else "Aucune fiche récente")
     elif args.cmd == "collect":
         from .agents.topic_agent import select_candidates
-        from .collect import fronts, gdelt
+        from .collect import fronts, news_search
 
-        cands = await gdelt.search({"fr": [args.query], "en": [args.query]}, 7)
+        cands = await news_search.search({"fr": [args.query], "en": [args.query]}, 7)
         cands += await fronts.collect(args.query.split(), now() - timedelta(days=7), ["fr", "en"])
         chosen = select_candidates(cands, now() - timedelta(days=7))
         for c in chosen:

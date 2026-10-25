@@ -217,6 +217,8 @@ export interface Settings {
   discover_enabled: boolean;
   brief_audio_auto: boolean;
   gdelt: boolean;
+  /** Bing Actualités : la recherche datée avec GDELT, et le complément des IA sans recherche web. */
+  bing_news: boolean;
   onboarding_done: boolean;
   onboarding_step: number;
   consent_at: string | null;
