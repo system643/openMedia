@@ -10,8 +10,11 @@ from .llm import LLMError, NoApiKey
 
 CONTEXT = re.compile(r"context|too long|too many tokens|maximum.*tokens|n_ctx|prompt is too long|exceeds", re.I)
 # Crédit épuisé, dit autrement selon les fournisseurs (DeepSeek : 402 « Insufficient Balance » ;
-# Kimi, GLM, Qwen : 429 ou 400 avec un code de solde ou d'arriéré).
-CREDIT = re.compile(r"insufficient.?balance|insufficient.?quota|exceeded_current_quota|balance is not enough|arrearage|account.*(?:overdue|suspended)|余额不足|credit", re.I)
+# Kimi, GLM, Qwen : 429 ou 400 avec un code de solde ou d'arriéré ; xAI : 403 pour une équipe
+# qui n'a encore ni crédit ni licence).
+CREDIT = re.compile(r"insufficient.?balance|insufficient.?quota|exceeded_current_quota|balance is not enough|arrearage|account.*(?:overdue|suspended)|余额不足|credit|licenses?", re.I)
+# Une clé fausse, dite avec un autre statut que 401/403 (xAI répond 400).
+BAD_KEY = re.compile(r"(?:incorrect|invalid|wrong) (?:api )?key|api key (?:is )?(?:invalid|not valid)", re.I)
 # Le filtre de contenu des fournisseurs : fréquent sur les sujets politiques sensibles pour
 # les fournisseurs chinois (DeepSeek « Content Exists Risk », Qwen « data_inspection_failed »,
 # GLM code 1301, Kimi « high risk »).
@@ -25,7 +28,7 @@ def refused_content(detail: str) -> bool:
 def http_error(label: str, status: int, detail: str = "", *, local: bool = False) -> Exception:
     """L'exception à lever pour une réponse HTTP en erreur d'un fournisseur (`label` : son nom)."""
     detail = (detail or "").strip()[:200]
-    if status in (401, 403) and not CREDIT.search(detail):
+    if (status in (401, 403) and not CREDIT.search(detail)) or (status == 400 and BAD_KEY.search(detail)):
         if local:
             return LLMError(f"{label} refuse la demande ({status}) : vérifie son serveur local.")
         return NoApiKey(f"La clé {label} est refusée : vérifie-la ou remplace-la dans Réglages › Moteur IA.")

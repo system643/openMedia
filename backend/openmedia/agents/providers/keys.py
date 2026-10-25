@@ -4,14 +4,22 @@
 from __future__ import annotations
 
 import re
+from typing import NamedTuple
 
 import httpx
 
+from ..errors import BAD_KEY, CREDIT
 from .catalog import PROVIDERS
 
 
 class KeyRefused(ValueError):
     pass
+
+
+class KeyCheck(NamedTuple):
+    provider: str
+    verified: bool
+    warning: str = ""  # la clé est rangée, mais le lecteur doit faire quelque chose (crédit…)
 
 
 def detect_provider(key: str) -> list[str]:
@@ -53,12 +61,14 @@ def _check_request(provider: str, key: str) -> tuple[str, dict]:
     return f"{base_url(provider)}{PROVIDERS[provider].key_check}", {"Authorization": f"Bearer {key}"}
 
 
-async def check_key(key: str, provider: str | None = None) -> tuple[str, bool]:
-    """(fournisseur, vérifiée). Lève `KeyRefused` si aucun fournisseur n'accepte la clé.
-    Hors ligne, une clé au préfixe sans ambiguïté est acceptée sans vérification."""
+async def check_key(key: str, provider: str | None = None) -> KeyCheck:
+    """(fournisseur, vérifiée, avertissement). Lève `KeyRefused` si aucun fournisseur n'accepte
+    la clé. Hors ligne, une clé au préfixe sans ambiguïté est acceptée sans vérification. Un
+    compte sans crédit répond parfois 401/403 (xAI) : la clé est bonne, c'est le solde qui manque."""
     candidates = [provider] if provider else detect_provider(key)
     offline = False
     busy: list[str] = []  # fournisseurs surchargés ou en quota : la clé n'est pas refusée pour autant
+    broke: list[str] = []  # la clé est reconnue, mais le compte n'a pas de crédit
     async with httpx.AsyncClient(timeout=15) as http:
         for p in candidates:
             url, headers = _check_request(p, key)
@@ -70,13 +80,17 @@ async def check_key(key: str, provider: str | None = None) -> tuple[str, bool]:
                 offline = True
                 continue
             if r.status_code < 400:
-                return p, True
-            if r.status_code not in (401, 403):
+                return KeyCheck(p, True)
+            if r.status_code == 402 or CREDIT.search(r.text):
+                broke.append(p)
+            elif r.status_code not in (401, 403) and not BAD_KEY.search(r.text):
                 busy.append(p)
+    if broke:
+        return KeyCheck(broke[0], False, f"Clé {PROVIDERS[broke[0]].label} enregistrée, mais le compte n'a pas de crédit : ajoutes-en chez {PROVIDERS[broke[0]].label}, sinon les passages échoueront.")
     if busy:
-        return busy[0], False
+        return KeyCheck(busy[0], False)
     if offline and len(candidates) == 1:
-        return candidates[0], False
+        return KeyCheck(candidates[0], False)
     names = " ou ".join(PROVIDERS[p].label for p in candidates)
     raise KeyRefused(f"Clé refusée par {names}." if not offline else f"Impossible de vérifier la clé ({names}) : vérifie ta connexion.")
 

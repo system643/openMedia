@@ -127,23 +127,24 @@ async def put_api_key(body: ApiKey):
         set_key(body.provider or "anthropic", None)
         return {**get_settings(), "detected": None}
     try:
-        provider, verified = await check_key(key, body.provider)
+        provider, verified, warning = await check_key(key, body.provider)
     except KeyRefused as e:
         raise HTTPException(400, str(e))
     set_key(provider, key)
     _default_models_for(provider)
-    return {**get_settings(), "detected": provider, "verified": verified}
+    return {**get_settings(), "detected": provider, "verified": verified, "warning": warning}
 
 
 def _default_models_for(provider: str) -> None:
     """Première clé d'un autre fournisseur, sans accès à Claude : les rôles encore réglés sur
-    Claude passent à la gamme Équilibrée de ce fournisseur."""
+    Claude passent à la gamme Équilibrée de ce fournisseur. « Sans accès à Claude » : ni clé
+    Anthropic ni Claude Code, même si l'IA de ce PC était choisie jusque-là."""
     from ..agents.llm import engine_status
     from ..agents.providers import catalog
 
     settings = load_settings()
     roles = settings.models.model_dump()
-    if provider == "anthropic" or engine_status()["engine"] is not None or any(catalog.split(m)[0] != "anthropic" for m in roles.values()):
+    if provider == "anthropic" or engine_status()["engine"] in ("api", "claude_code") or any(catalog.split(m)[0] != "anthropic" for m in roles.values()):
         return
     preset = catalog.PRESETS["equilibre"]
     update_settings({"models": {role: catalog.tier_model(provider, preset[role]) or model for role, model in roles.items()}})
@@ -183,24 +184,30 @@ def local_engines():
 
 @router.get("/models")
 async def list_models(live: bool = False):
-    """Les modèles proposés par gamme, avec leur prix, et (avec `live`) ceux que chaque
-    clé enregistrée peut utiliser."""
+    """Les modèles proposés par gamme, avec leur prix, ceux de l'IA de ce PC (Ollama, LM Studio)
+    et (avec `live`) ceux que chaque clé enregistrée peut utiliser. `effective` : le modèle qui
+    sert vraiment chaque rôle (un rôle réglé sur un fournisseur absent passe à un autre)."""
     import asyncio
 
-    from ..agents.llm import engine_status
+    from ..agents.llm import NoApiKey, RouterLLM, engine_status
     from ..agents.providers import catalog
     from ..agents.providers.keys import list_live
+    from ..agents.providers.local import detect
 
     status = engine_status()
     usable = {p: (status["engine"] in ("api", "claude_code") if p == "anthropic" else info["has_key"]) for p, info in status["providers"].items()}
+    servers = await asyncio.to_thread(detect, load_settings().local_urls)
+    usable |= {p: servers[p]["found"] for p in catalog.LOCAL}
 
     def row(model_id: str, label: str, tier: str | None, featured: bool, note: str = "") -> dict:
         provider = catalog.split(model_id)[0]
         known = catalog.info(model_id)
         price = known.price if known else catalog.price(model_id) if provider != "openrouter" else None  # le prix hors pointe pour DeepSeek
-        return {"id": model_id, "label": label, "provider": provider, "tier": tier, "tier_label": catalog.TIER_LABEL.get(tier or "", ""), "price": price, "featured": featured, "usable": usable[provider], "note": note, "region": catalog.PROVIDERS[provider].region}
+        region = "sur ce PC" if provider in catalog.LOCAL else catalog.PROVIDERS[provider].region
+        return {"id": model_id, "label": label, "provider": provider, "tier": tier, "tier_label": catalog.TIER_LABEL.get(tier or "", ""), "price": price, "featured": featured, "usable": usable[provider], "note": note, "region": region}
 
     models = [row(m.id, m.label, m.tier, m.featured, m.note) for m in catalog.MODELS]
+    models += [row(f"{p}:{m['id']}", m["id"] + (f" ({m['size']})" if m["size"] else ""), catalog.guess_tier(m["id"]), True) for p in catalog.LOCAL for m in servers[p]["models"]]
     if live:
         known = {m["id"] for m in models}
 
@@ -226,8 +233,18 @@ async def list_models(live: bool = False):
         key: {"label": p["label"], "by_provider": {prov: {role: catalog.tier_model(prov, p[role]) for role in ("triage", "topic", "director")} for prov in catalog.PROVIDERS}}
         for key, p in catalog.PRESETS.items()
     }
-    providers = [{"id": p.id, "label": p.label, "usable": usable[p.id], "has_key": status["providers"][p.id]["has_key"], "search": p.search, "batch": p.batch, "hint": p.hint, "region": p.region} for p in catalog.PROVIDERS.values()]
-    return {"providers": providers, "models": models, "presets": presets, "tiers": catalog.TIER_LABEL}
+    providers = [{"id": p.id, "label": p.label, "usable": usable[p.id], "has_key": status["providers"][p.id]["has_key"], "search": p.search, "batch": p.batch, "hint": p.hint, "region": p.region, "local": False} for p in catalog.PROVIDERS.values()]
+    providers += [{"id": p, "label": label, "usable": usable[p], "has_key": False, "search": False, "batch": False, "hint": "", "region": "sur ce PC", "local": True} for p, label in catalog.LOCAL.items()]
+    effective: dict[str, str | None] = {}
+    if status["choice"] != "local":
+        router = RouterLLM(status)
+        for role, model in load_settings().models.model_dump().items():
+            provider = catalog.split(model)[0]
+            try:
+                effective[role] = model if router.available(provider) else router.same_tier(model, exclude=provider)
+            except NoApiKey:
+                effective[role] = None
+    return {"providers": providers, "models": models, "presets": presets, "tiers": catalog.TIER_LABEL, "effective": effective}
 
 
 class ModelCheckIn(BaseModel):

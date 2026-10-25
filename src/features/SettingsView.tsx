@@ -178,7 +178,7 @@ export function SettingsView({ section = "general" }: { section?: SettingsSectio
               <ModelsGroup settings={st} onChange={set} />
             )}
             <ApiKeyGroup settings={st} />
-            {st.engine !== "local" && <EngineGroup settings={st} onChange={set} />}
+            {st.engine !== "local" && (claudeInUse(st) ? <EngineGroup settings={st} onChange={set} /> : <ClaudeOptional />)}
           </>
         )}
 
@@ -208,6 +208,21 @@ export function SettingsView({ section = "general" }: { section?: SettingsSectio
 }
 
 const ENGINE_LABEL = { api: "l'API Claude", claude_code: "Claude Code", local: "l'IA de ce PC" } as const;
+
+/** Claude n'est qu'un fournisseur parmi d'autres : ses réglages ne s'affichent que s'il sert. */
+function claudeInUse(st: Settings): boolean {
+  return st.has_api_key || !!st.claude_code?.found || st.engine === "api" || st.engine === "claude_code";
+}
+
+function ClaudeOptional() {
+  return (
+    <Group title="Claude (facultatif)">
+      <Row label="Ni clé Anthropic ni Claude Code" hint="Rien à régler : tes rôles passent par tes autres fournisseurs ou par l'IA de ce PC. Pour utiliser Claude, ajoute une clé Anthropic ci-dessus, ou installe Claude Code (abonnement Claude) puis relance openMedia.">
+        <span className="text-[13px] text-ink-3">Non utilisé</span>
+      </Row>
+    </Group>
+  );
+}
 
 function EngineGroup({ settings: st, onChange }: { settings: Settings; onChange: (body: Partial<Settings>) => void }) {
   const cc = st.claude_code ?? { found: false, path: null, version: null };
@@ -287,9 +302,10 @@ function ModelsGroup({ settings: st, onChange }: { settings: Settings; onChange:
   const [chosen, setChosen] = useState<ProviderId | null>(null);
   const catalog = q.data;
   if (!catalog) return null;
-  const usable = catalog.providers.filter((p) => p.usable);
+  const usable = catalog.providers.filter((p) => p.usable && !p.local);
+  const label = (id: string) => catalog.models.find((m) => m.id === id)?.label ?? id;
   const ofTopic = catalog.models.find((m) => m.id === st.models.topic)?.provider;
-  const provider = chosen ?? (usable.some((p) => p.id === ofTopic) ? ofTopic! : usable[0]?.id);
+  const provider = (chosen ?? (usable.some((p) => p.id === ofTopic) ? ofTopic! : usable[0]?.id)) as ProviderId | undefined; // jamais un serveur de ce PC : `usable` les écarte
   const presets = Object.entries(catalog.presets);
   const picks = (key: string) => (provider ? catalog.presets[key].by_provider[provider] : null);
   const active = presets.find(([key]) => ROLES.every((r) => picks(key)?.[r.id] === st.models[r.id]))?.[0] ?? "";
@@ -297,7 +313,7 @@ function ModelsGroup({ settings: st, onChange }: { settings: Settings; onChange:
   return (
     <Group
       title="Modèles"
-      footer="Prix par million de tokens, en entrée puis en sortie. Un rôle réglé sur un fournisseur sans clé passe au modèle de même gamme d'un fournisseur disponible."
+      footer="Prix par million de tokens, en entrée puis en sortie. Tu peux mélanger : chaque rôle a son modèle, en ligne ou sur ce PC (Ollama, LM Studio), par exemple le tri sur ce PC et les fiches chez un fournisseur en ligne. Un rôle réglé sur un fournisseur indisponible passe au modèle de même gamme d'un fournisseur disponible."
     >
       {provider && (
         <Row label="Gamme" hint="Remplit les trois rôles avec les modèles du fournisseur choisi.">
@@ -321,14 +337,26 @@ function ModelsGroup({ settings: st, onChange }: { settings: Settings; onChange:
           </div>
         </Row>
       )}
-      {ROLES.map((r) => (
-        <Row key={r.id} label={r.label} hint={r.hint}>
-          <div className="flex items-center gap-2">
-            <ModelSelect className="w-64" value={st.models[r.id]} onChange={(v) => onChange({ models: { ...st.models, [r.id]: v } })} />
-            <CheckModel model={st.models[r.id]} />
+      {ROLES.map((r) => {
+        const served = catalog.effective[r.id];
+        return (
+          <div key={r.id}>
+            <Row label={r.label} hint={r.hint}>
+              <div className="flex items-center gap-2">
+                <ModelSelect className="w-64" value={st.models[r.id]} onChange={(v) => onChange({ models: { ...st.models, [r.id]: v } })} />
+                <CheckModel model={st.models[r.id]} />
+              </div>
+            </Row>
+            {served !== undefined && served !== st.models[r.id] && (
+              <div className="px-4 pb-2.5 text-[12.5px] leading-snug text-warn">
+                {served
+                  ? `${label(st.models[r.id])} n'est pas disponible : ce rôle passe par ${label(served)}. Choisis un modèle dans la liste pour le fixer.`
+                  : `${label(st.models[r.id])} n'est pas disponible, et aucun autre moteur ne peut le remplacer : choisis un modèle dans la liste.`}
+              </div>
+            )}
           </div>
-        </Row>
-      ))}
+        );
+      })}
       {catalog.providers.some((p) => p.id === "deepseek" && p.usable) && !ROLES.every((r) => st.models[r.id].startsWith("deepseek:")) && (
         <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-[12.5px] leading-snug text-ink-2">
           <span className="min-w-0 flex-1">Petit budget : DeepSeek Flash pour le tri, DeepSeek V4 Pro pour les sujets et le Directeur. Environ 3 à 5 fois moins cher que Claude Sonnet ; les articles sont traités en Chine.</span>
@@ -413,11 +441,15 @@ function ApiKeyGroup({ settings: st }: { settings: Settings }) {
     void qc.invalidateQueries({ queryKey: ["models"] });
   };
   const save = useMutation({
-    mutationFn: (k: string) => api<Settings & { detected: ProviderId; verified: boolean }>("/settings/api-key", { method: "PUT", body: { key: k, provider: forProvider || null } }),
+    mutationFn: (k: string) => api<Settings & { detected: ProviderId; verified: boolean; warning: string }>("/settings/api-key", { method: "PUT", body: { key: k, provider: forProvider || null } }),
     onSuccess: (data) => {
       refresh(data);
       setKey("");
-      setMessage({ ok: true, text: `Clé ${data.providers[data.detected].label} reconnue${data.verified ? " et vérifiée" : " (vérification impossible pour le moment : le fournisseur ne répond pas, elle sera utilisée quand même)"}.` });
+      setMessage(
+        data.warning
+          ? { ok: false, text: data.warning }
+          : { ok: true, text: `Clé ${data.providers[data.detected].label} reconnue${data.verified ? " et vérifiée" : " (vérification impossible pour le moment : le fournisseur ne répond pas, elle sera utilisée quand même)"}.` },
+      );
     },
     onError: (e: Error) => setMessage({ ok: false, text: e.message }),
   });

@@ -7,11 +7,12 @@ import type { LocalProvider, LocalServers, ProviderId, Settings } from "../lib/t
 import { Button, Segmented, Spinner, inputClass } from "./ui";
 
 /** Un moteur est prêt : l'IA de ce PC si c'est elle qu'on a choisie (jamais de repli en ligne),
- *  sinon Claude (clé ou Claude Code) ou la clé d'un autre fournisseur. */
+ *  sinon Claude (clé ou Claude Code), la clé d'un autre fournisseur, ou un rôle confié à l'IA
+ *  de ce PC (`ollama:…`). */
 export function engineReady(st: Settings | undefined): boolean {
   if (!st) return false;
   if (st.engine === "local") return st.engine_active === "local";
-  return !!st.engine_active || Object.values(st.providers ?? {}).some((p) => p.has_key);
+  return !!st.engine_active || Object.values(st.providers ?? {}).some((p) => p.has_key) || Object.values(st.models ?? {}).some((m) => /^(ollama|lmstudio):/.test(m));
 }
 
 const BUDGETS = ["5", "15", "30"];
@@ -64,7 +65,7 @@ export function EngineChoice({ settings: st }: { settings: Settings }) {
           </div>
         )}
       </EngineCard>
-      <EngineCard icon={<Terminal size={17} />} title="Claude Code (ton abonnement Claude)" badge="En ligne · Anthropic" active={onlineReady && st.engine_active === "claude_code"}>
+      <EngineCard icon={<Terminal size={17} />} title="Claude Code (facultatif, abonnement Claude)" badge="En ligne · Anthropic" active={onlineReady && st.engine_active === "claude_code"}>
         {cc.found ? (
           <>
             <p>Installé sur ce PC (version {cc.version ?? "inconnue"}). Pas de facture en plus, mais les passages comptent dans les limites de ton abonnement : tu pourrais les atteindre plus vite dans tes autres usages de Claude.</p>
@@ -85,7 +86,7 @@ export function EngineChoice({ settings: st }: { settings: Settings }) {
             )}
           </>
         ) : (
-          <p>Pas trouvé sur ce PC. Pour l'utiliser : « npm install -g @anthropic-ai/claude-code », puis lance « claude » une fois pour te connecter.</p>
+          <p>Pas trouvé sur ce PC, et ce n'est pas nécessaire : une clé API ou l'IA de ce PC suffisent. Si tu as un abonnement Claude et veux t'en servir : « npm install -g @anthropic-ai/claude-code », puis lance « claude » une fois pour te connecter.</p>
         )}
       </EngineCard>
       {patch.error && <p className="text-[13px] text-deny">{patch.error.message}</p>}
@@ -119,18 +120,25 @@ function EngineCard({ icon, title, badge, active, children }: { icon: ReactNode;
   );
 }
 
+type KeySaved = Settings & { detected: ProviderId; verified: boolean; warning: string };
+
 function KeyForm({ engine, onSaved }: { engine: Settings["engine"]; onSaved: (s: Settings) => void }) {
   const [key, setKey] = useState("");
+  const [saved, setSaved] = useState<{ label: string; warning: string; leftLocal: boolean } | null>(null);
   const save = useMutation({
     mutationFn: async () => {
-      const st = await api<Settings>("/settings/api-key", { method: "PUT", body: { key: key.trim() } });
-      // Une clé en ligne choisie ici : on quitte l'IA de ce PC.
-      return engine === "local" ? api<Settings>("/settings", { method: "PATCH", body: { engine: "auto" } }) : st;
+      const st = await api<KeySaved>("/settings/api-key", { method: "PUT", body: { key: key.trim() } });
+      // Une clé en ligne choisie ici : on quitte le mode « tout sur ce PC » (l'IA de ce PC reste
+      // disponible rôle par rôle, dans Réglages › Moteur IA).
+      const next = engine === "local" ? await api<Settings>("/settings", { method: "PATCH", body: { engine: "auto" } }) : st;
+      return { st: next, label: st.providers[st.detected]?.label ?? st.detected, warning: st.warning, leftLocal: engine === "local" };
     },
-    onSuccess: (st) => {
+    onSuccess: ({ st, ...info }) => {
       setKey("");
+      setSaved(info);
       onSaved(st);
     },
+    onError: () => setSaved(null),
   });
   return (
     <form
@@ -147,6 +155,8 @@ function KeyForm({ engine, onSaved }: { engine: Settings["engine"]; onSaved: (s:
         </Button>
       </div>
       {save.error && <p className="mt-1.5 text-deny">{save.error.message}</p>}
+      {saved?.warning && <p className="mt-1.5 text-warn">{saved.warning}</p>}
+      {saved?.leftLocal && <p className="mt-1.5 text-ink-2">{saved.label} servira désormais tes sujets. L'IA de ce PC reste à ta disposition : dans Réglages › Moteur IA, tu peux lui confier un rôle (le tri, par exemple).</p>}
     </form>
   );
 }
@@ -206,6 +216,9 @@ function LocalCard({ settings: st, onPatch, busy }: { settings: Settings; onPatc
         </div>
       )}
       {current === "lmstudio" && ctx != null && ctx < 32768 && <p className="mt-2 text-warn">Ce modèle est chargé avec un contexte de {ctx.toLocaleString("fr-FR")} tokens : règle-le sur 32 768 au moins dans LM Studio, sinon les fiches seront tronquées.</p>}
+      {st.engine !== "local" && found.some(([, s]) => s.models.length > 0) && (
+        <p className="mt-2 text-ink-2">Choisir un modèle ici fait tout passer par ce PC, sans rien en ligne. Pour mélanger (par exemple le tri sur ce PC et les fiches chez ton fournisseur en ligne), choisis plutôt ses modèles rôle par rôle, dans Réglages › Moteur IA.</p>
+      )}
       {st.engine === "local" && !active && !servers.isLoading && <p className="mt-2 text-warn">L'IA de ce PC est choisie, mais {st.local?.found ? "le modèle choisi est introuvable" : "elle ne répond pas"} : aucun passage ne peut tourner, et rien ne part en ligne à sa place.</p>}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button size="sm" icon={<RefreshCw size={12} />} busy={servers.isFetching} onClick={() => void servers.refetch()}>

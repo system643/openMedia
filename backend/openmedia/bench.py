@@ -94,7 +94,7 @@ async def run_model(model: str) -> dict:
     llm = get_llm()
     provider = catalog.split(model)[0]
     if provider not in ("local",) and not llm.available(provider):
-        return {"model": model, "error": f"pas de clé {catalog.PROVIDERS[provider].label}"}
+        return {"model": model, "error": f"{catalog.label(provider)} ne répond pas" if provider in catalog.LOCAL else f"pas de clé {catalog.label(provider)}"}
     pairs, expected = material()
     meta = {a.id: (a, s) for a, s in pairs}
     meter = RunMeter()

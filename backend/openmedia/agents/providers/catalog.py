@@ -1,7 +1,8 @@
 """Les fournisseurs d'IA et leurs modèles, rangés par gamme, avec leurs prix.
 
 Un modèle s'écrit `fournisseur:identifiant` (`openai:gpt-6.1-sol`, `deepseek:deepseek-flash`) ;
-un `claude-*` sans préfixe est un modèle Anthropic (clé API ou Claude Code).
+un `claude-*` sans préfixe est un modèle Anthropic (clé API ou Claude Code), et
+`ollama:qwen3:14b` ou `lmstudio:…` un modèle servi sur ce PC (gratuit, sans clé).
 
 Chaque fournisseur a son profil : comment il rend du JSON structuré, comment on règle sa
 réflexion, où partent les données. Le moteur (`openai_compat.py`) s'y adapte, puis se replie
@@ -9,7 +10,7 @@ de lui-même si un modèle refuse un paramètre.
 
 Prix en $ par million de tokens : (entrée, sortie, lecture du cache), relevés sur les pages
 officielles le 19/10/2026 (Anthropic, OpenAI, Google, Mistral) et le 23/10/2026 (DeepSeek,
-Moonshot, Z.ai, xAI ; Qwen d'après la liste publique d'OpenRouter). Les modèles d'OpenRouter
+Moonshot, Z.ai ; xAI le 25/10/2026 ; Qwen d'après la liste publique d'OpenRouter). Les modèles d'OpenRouter
 prennent leur prix en direct.
 """
 
@@ -129,8 +130,8 @@ MODELS: list[ModelInfo] = [
     ModelInfo("qwen:qwen-flash", "Qwen Flash", "rapide", (0.15, 0.47, 0.15), note="Prix indicatif : vérifie-le dans ta console Alibaba Cloud."),
     # xAI (Grok)
     ModelInfo("xai:grok-4.7", "Grok 4.7", "premium", (2.00, 6.00, 0.50)),
-    ModelInfo("xai:grok-4.3", "Grok 4.3", "equilibre", (1.25, 2.50, 1.25)),
-    ModelInfo("xai:grok-build-0.1", "Grok Build 0.1", "rapide", (1.00, 2.00, 1.00), featured=False),
+    ModelInfo("xai:grok-4.3", "Grok 4.3", "equilibre", (1.25, 2.50, 0.20)),
+    ModelInfo("xai:grok-build-0.1", "Grok Build 0.1", "rapide", (1.00, 2.00, 0.20), featured=False),
     # OpenRouter : une seule clé pour les modèles des autres ; le prix réel est lu en direct.
     ModelInfo("openrouter:anthropic/claude-fable-5.1", "Fable 5.1 (OpenRouter)", "maximum", None),
     ModelInfo("openrouter:anthropic/claude-opus-5.5", "Opus 5.5 (OpenRouter)", "premium", None),
@@ -157,12 +158,25 @@ PRESETS = {
 }
 
 
+# Les serveurs de l'IA de ce PC : on peut leur confier un rôle à côté des fournisseurs en ligne.
+LOCAL = {"ollama": "Ollama", "lmstudio": "LM Studio"}
+
+
 def split(model: str) -> tuple[str, str]:
-    """(fournisseur, identifiant chez le fournisseur)."""
+    """(fournisseur, identifiant chez le fournisseur). Seul le premier `:` sépare : un modèle
+    Ollama garde le sien (`ollama:qwen3:14b` → `ollama`, `qwen3:14b`)."""
     prefix, sep, rest = model.partition(":")
-    if sep and prefix in PROVIDERS:
+    if sep and (prefix in PROVIDERS or prefix in LOCAL):
         return prefix, rest
     return "anthropic", model
+
+
+def is_local(model: str) -> bool:
+    return split(model)[0] in LOCAL
+
+
+def label(provider: str) -> str:
+    return LOCAL[provider] if provider in LOCAL else PROVIDERS[provider].label
 
 
 def info(model: str) -> ModelInfo | None:
@@ -221,6 +235,8 @@ def price(model: str, at: datetime | None = None) -> tuple[float, float, float] 
     if (m := BY_ID.get(model)) and m.price:
         return m.peak if m.peak and deepseek_peak(at) else m.price
     provider, name = split(model)
+    if provider in LOCAL:
+        return (0.0, 0.0, 0.0)
     if provider == "openrouter":
         return _openrouter_prices().get(name)
     return None

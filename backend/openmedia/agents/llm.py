@@ -278,9 +278,10 @@ def _anthropic_error(e: Exception) -> Exception:
 
 class RouterLLM(LLM):
     """Oriente chaque appel vers le moteur du modèle demandé : les `claude-*` vers l'API Claude
-    ou Claude Code (selon le réglage), les `fournisseur:modèle` vers ce fournisseur. Un modèle
-    dont le fournisseur n'est pas disponible est remplacé par le modèle de même gamme d'un
-    fournisseur disponible, et le passage le note."""
+    ou Claude Code (selon le réglage), les `fournisseur:modèle` vers ce fournisseur, les
+    `ollama:…` et `lmstudio:…` vers l'IA de ce PC (on peut ainsi mélanger, rôle par rôle). Un
+    modèle dont le fournisseur n'est pas disponible est remplacé par le modèle de même gamme
+    d'un fournisseur disponible, et le passage le note."""
 
     name = "router"
 
@@ -292,16 +293,21 @@ class RouterLLM(LLM):
     def available(self, provider: str) -> bool:
         if provider == "anthropic":
             return self.status["engine"] in ("api", "claude_code")
+        if provider in catalog.LOCAL:
+            return local_found(provider)
         return self.status["providers"][provider]["has_key"]
 
     def engine(self, provider: str) -> LLM:
         if provider not in self._engines:
-            if provider == "local":
+            if provider == "local" or provider in catalog.LOCAL:
                 from ..config import load_settings
                 from .providers.local import LocalLLM
 
                 s = load_settings()
-                self._engines[provider] = LocalLLM(s.local_provider, s.local_model, s.local_urls)
+                if provider == "local":  # tout sur ce PC : un seul modèle pour tout
+                    self._engines[provider] = LocalLLM(s.local_provider, s.local_model, s.local_urls)
+                else:  # un rôle confié à l'IA de ce PC : le modèle vient de l'appel
+                    self._engines[provider] = LocalLLM(provider, "", s.local_urls)
             elif provider == "anthropic":
                 if self.status["engine"] == "api":
                     self._engines[provider] = ApiLLM()
@@ -334,16 +340,24 @@ class RouterLLM(LLM):
             return provider, name
         if alt := self.same_tier(model, exclude=provider):
             if meter is not None:
-                meter.note(f"{model} indisponible (pas de moteur {catalog.PROVIDERS[provider].label}) : remplacé par {alt}, de même gamme")
+                meter.note(f"{model} indisponible (pas de moteur {catalog.label(provider)}) : remplacé par {alt}, de même gamme")
             return catalog.split(alt)
-        raise NoApiKey(f"Aucun moteur pour {model} : ajoute une clé {catalog.PROVIDERS[provider].label} dans Réglages, ou choisis un autre modèle.")
+        if provider in catalog.LOCAL:
+            raise NoApiKey(f"{catalog.label(provider)} ne répond pas sur ce PC : lance-le, ou choisis un autre modèle pour ce rôle dans Réglages › Moteur IA.")
+        raise NoApiKey(f"Aucun moteur pour {model} : ajoute une clé {catalog.label(provider)} dans Réglages, ou choisis un autre modèle.")
 
     def same_tier(self, model: str, exclude: str) -> str | None:
-        """Le modèle de même gamme chez un autre fournisseur disponible."""
+        """Le modèle de même gamme chez un autre fournisseur disponible ; à défaut, le modèle de
+        ce PC qu'un rôle utilise déjà."""
         tier = catalog.tier_of(model) or "equilibre"
         for other in catalog.PROVIDERS:
             if other != exclude and self.available(other) and (alt := catalog.tier_model(other, tier)):
                 return alt
+        from ..config import load_settings
+
+        for role_model in load_settings().models.model_dump().values():
+            if (p := catalog.split(role_model)[0]) in catalog.LOCAL and p != exclude and self.available(p):
+                return role_model
         return None
 
     async def _with_fallback(self, meter: RunMeter, model: str, call):
@@ -356,7 +370,7 @@ class RouterLLM(LLM):
         except ContentRefused:
             if provider == "local" or not (alt := self.same_tier(f"{provider}:{name}" if provider != "anthropic" else name, exclude=provider)):
                 raise
-            meter.note(f"{catalog.PROVIDERS[provider].label} a refusé ces articles (filtre de contenu) : appel repris par {alt}")
+            meter.note(f"{catalog.label(provider)} a refusé ces articles (filtre de contenu) : appel repris par {alt}")
             other, alt_name = catalog.split(alt)
             return await call(self.engine(other), alt_name)
 
@@ -402,10 +416,22 @@ def engine_status() -> dict:
     return {"engine": engine, "choice": choice, "has_api_key": has_key, "claude_code": cc, "providers": providers, "local": local, "local_model": settings.local_model}
 
 
+def local_found(provider: str) -> bool:
+    """Ollama ou LM Studio répond-il sur ce PC ? (détection gardée 30 s, voir `local.detect`)"""
+    from ..config import load_settings
+    from .providers.local import detect
+
+    return detect(load_settings().local_urls)[provider]["found"]
+
+
 def any_engine(status: dict) -> bool:
     if status["choice"] == "local":  # l'IA de ce PC, ou rien : jamais de repli en ligne
         return status["engine"] == "local"
-    return status["engine"] is not None or any(p["has_key"] for k, p in status["providers"].items() if k != "anthropic")
+    if status["engine"] is not None or any(p["has_key"] for k, p in status["providers"].items() if k != "anthropic"):
+        return True
+    from ..config import load_settings  # un rôle confié à l'IA de ce PC suffit
+
+    return any((p := catalog.split(m)[0]) in catalog.LOCAL and local_found(p) for m in load_settings().models.model_dump().values())
 
 
 def get_llm() -> LLM:

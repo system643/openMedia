@@ -12,7 +12,8 @@ from fastapi.testclient import TestClient
 from openmedia.agents import llm as llm_mod
 from openmedia.agents.batching import BatchingLLM
 from openmedia.agents.llm import NoApiKey, RouterLLM, RunMeter, token_cost
-from openmedia.agents.providers import catalog
+from openmedia import config
+from openmedia.agents.providers import catalog, local
 from openmedia.agents.providers.keys import detect_provider
 from openmedia.agents.providers.openai_compat import OpenAICompatLLM, strict_schema
 from openmedia.agents.schemas import FicheContent, IntakeSuggestion, RevisePatch
@@ -215,6 +216,8 @@ def test_api_key_detection_models_and_costs():
     for url in ("https://api.mistral.ai/v1/models", "https://api.deepseek.com/models", "https://api.moonshot.ai/v1/models", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/models"):
         respx.get(url).mock(return_value=httpx.Response(401, json={"error": {"message": "bad"}}))
     respx.get("https://openrouter.ai/api/v1/models").mock(return_value=httpx.Response(200, json={"data": [{"id": "anthropic/claude-sonnet-5.5", "pricing": {"prompt": "0.000002", "completion": "0.00001"}}]}))
+    respx.route(host="127.0.0.1").mock(side_effect=httpx.ConnectError("refusé"))  # ni Ollama ni LM Studio
+    local._detected.update(at=0.0, key=None, value=None)
     catalog._OR_CACHE["at"] = 0
     with TestClient(app) as c:
         r = c.put("/settings/api-key", json={"key": "AIzaSy-test"})
@@ -230,3 +233,71 @@ def test_api_key_detection_models_and_costs():
         assert next(m for m in models["models"] if m["id"] == "openrouter:anthropic/claude-sonnet-5.5")["price"] is None
         costs = c.get("/costs").json()
         assert {"month", "projection", "topics", "last_topic_run", "last_brief"} <= set(costs)
+
+
+@pytest.fixture
+def saved_settings():
+    path = config._settings_path()
+    before = path.read_text(encoding="utf-8") if path.exists() else None
+    yield
+    if before is not None:
+        path.write_text(before, encoding="utf-8")
+    local._detected.update(at=0.0, key=None, value=None)
+
+
+def _ollama_running():
+    respx.get("http://127.0.0.1:11434/api/tags").respond(json={"models": [{"name": "qwen3:14b", "details": {"parameter_size": "14.8B"}}]})
+    respx.route(host="127.0.0.1", port=1234).mock(side_effect=httpx.ConnectError("refusé"))
+    local._detected.update(at=0.0, key=None, value=None)
+
+
+def test_local_model_ids_keep_their_own_colon():
+    assert catalog.split("ollama:qwen3:14b") == ("ollama", "qwen3:14b")
+    assert catalog.split("lmstudio:qwen/qwen3-14b") == ("lmstudio", "qwen/qwen3-14b")
+    assert catalog.price("ollama:qwen3:14b") == (0.0, 0.0, 0.0) and catalog.is_local("ollama:qwen3:14b")
+
+
+@respx.mock
+def test_roles_mix_this_pc_and_an_online_key(saved_settings):
+    """Le tri sur Ollama (gratuit), les fiches chez Grok : chacun chez son moteur, sans Claude."""
+    _ollama_running()
+    config.update_settings({"engine": "auto", "models": {"triage": "ollama:qwen3:14b", "topic": "xai:grok-4.7", "director": "claude-sonnet-5-5"}})
+    router = RouterLLM(_status(engine=None, xai=True))
+    meter = RunMeter()
+    assert router.resolve("ollama:qwen3:14b", meter) == ("ollama", "qwen3:14b")
+    assert router.resolve("xai:grok-4.7", meter) == ("xai", "grok-4.7")
+    assert router.resolve("claude-sonnet-5-5", meter) == ("xai", "grok-4.3")
+    # Sans aucune clé, un rôle sur l'IA de ce PC suffit, et les modèles imposés (Haiku) y passent.
+    alone = RouterLLM(_status(engine=None))
+    assert llm_mod.any_engine({**_status(engine=None), "choice": "auto"})
+    assert alone.resolve("claude-haiku-5-5") == ("ollama", "qwen3:14b")
+
+
+@respx.mock
+async def test_a_local_role_sends_its_own_model():
+    route = respx.post("http://127.0.0.1:11434/api/chat").respond(json={"message": {"content": "ok"}, "prompt_eval_count": 3, "eval_count": 1, "done_reason": "stop"})
+    meter = RunMeter()
+    assert await local.LocalLLM("ollama").text(meter, model="qwen3:14b", task="intake", content="x") == "ok"
+    assert json.loads(route.calls[0].request.content)["model"] == "qwen3:14b" and meter.cost_usd == 0
+
+
+@respx.mock
+def test_first_grok_key_moves_roles_off_claude_even_after_local_mode(saved_settings, monkeypatch):
+    _ollama_running()
+    monkeypatch.setattr("openmedia.agents.claude_code.claude_code_info", lambda: {"found": False, "path": None, "version": None})
+    respx.get("https://api.x.ai/v1/models").respond(json={"data": [{"id": "grok-4.7"}]})
+    from openmedia.server import app
+
+    config.update_settings({"engine": "local", "local_provider": "ollama", "local_model": "qwen3:14b", "models": {"triage": "claude-haiku-5-5", "topic": "claude-sonnet-5-5", "director": "claude-sonnet-5-5"}})
+    with TestClient(app) as c:
+        r = c.put("/settings/api-key", json={"key": "xai-test"}).json()
+        assert r["detected"] == "xai" and r["verified"] and r["warning"] == ""
+        assert all(m.startswith("xai:") for m in r["models"].values())
+        c.patch("/settings", json={"engine": "auto"})
+        models = c.get("/models").json()
+        ollama = next(p for p in models["providers"] if p["id"] == "ollama")
+        assert ollama["usable"] and ollama["local"]
+        row = next(m for m in models["models"] if m["id"] == "ollama:qwen3:14b")
+        assert row["usable"] and row["price"] == [0.0, 0.0, 0.0] and row["region"] == "sur ce PC"
+        assert models["effective"]["topic"].startswith("xai:")
+        c.delete("/settings/api-key/xai")

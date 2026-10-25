@@ -47,10 +47,22 @@ async def test_openai_compatible_quota_is_explained():
 @respx.mock
 async def test_a_busy_provider_does_not_refuse_the_key():
     respx.get("https://api.openai.com/v1/models").respond(503)
-    assert await check_key("sk-proj-abc", "openai") == ("openai", False)
+    assert await check_key("sk-proj-abc", "openai") == ("openai", False, "")
     respx.get("https://api.mistral.ai/v1/models").respond(401)
     with pytest.raises(KeyRefused):
         await check_key("a" * 32, "mistral")
+
+
+@respx.mock
+async def test_a_key_without_credit_is_kept_and_explained():
+    route = respx.get("https://api.x.ai/v1/models")
+    route.respond(403, json={"code": "The caller does not have permission to execute the specified operation", "error": "Your newly created team doesn't have any credits or licenses yet. You can purchase credits on https://console.x.ai."})
+    check = await check_key("xai-abc")
+    assert check.provider == "xai" and not check.verified and "crédit" in check.warning
+    # xAI répond 400 (et non 401) à une clé fausse : c'est un refus, pas une surcharge.
+    route.respond(400, json={"code": "Client specified an invalid argument", "error": "Incorrect API key provided: xa***bc."})
+    with pytest.raises(KeyRefused, match="Grok"):
+        await check_key("xai-abc")
 
 
 def test_anthropic_sdk_errors_are_translated():

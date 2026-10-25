@@ -1,5 +1,6 @@
 """L'IA sur ce PC : un modèle servi par Ollama ou LM Studio. En mode local, TOUS les appels
-passent par lui (voir `RouterLLM.resolve`) : rien ne part chez un fournisseur en ligne.
+passent par lui (voir `RouterLLM.resolve`) : rien ne part chez un fournisseur en ligne. Hors de
+ce mode, un rôle peut aussi lui être confié (`ollama:qwen3:14b`), à côté d'une IA en ligne.
 
 Ollama passe par son API native (`/api/chat`) : c'est la seule qui accepte la taille du
 contexte (`num_ctx`), et les consignes de rédaction dépassent les 4 096 tokens par défaut.
@@ -102,18 +103,17 @@ def _gate(url: str) -> asyncio.Semaphore:
 class LocalLLM(LLM):
     name = "local"
 
-    def __init__(self, provider: str, model: str, urls: dict[str, str] | None = None):
+    def __init__(self, provider: str, model: str = "", urls: dict[str, str] | None = None):
+        """`model` : le modèle imposé à tous les appels (mode local) ; vide, chaque appel dit le sien."""
         if provider not in DEFAULT_URLS:
             raise NoApiKey(f"Serveur local inconnu : {provider}")
-        if not model:
-            raise NoApiKey(f"Aucun modèle choisi pour {LABELS[provider]} : choisis-en un dans Réglages › Moteur IA.")
         self.provider, self.model = provider, model
         self.url = base_url(provider, urls)
         self.http = shared_client(httpx.Timeout(900, connect=10))
         self.gate = _gate(self.url)  # un seul appel à la fois : la carte graphique est partagée
 
-    def full(self) -> str:
-        return f"{self.provider}:{self.model}"
+    def full(self, model: str) -> str:
+        return f"{self.provider}:{model}"
 
     async def _post(self, path: str, body: dict) -> dict:
         check_tools(body.get("tools"))
@@ -126,11 +126,14 @@ class LocalLLM(LLM):
             raise http_error(LABELS[self.provider], r.status_code, r.text, local=True)
         return r.json()
 
-    async def _call(self, meter: RunMeter, *, task: str | None, content: str, max_tokens: int, schema, label: str) -> str:
+    async def _call(self, meter: RunMeter, *, model: str, task: str | None, content: str, max_tokens: int, schema, label: str) -> str:
+        model = self.model or model
+        if not model:
+            raise NoApiKey(f"Aucun modèle choisi pour {LABELS[self.provider]} : choisis-en un dans Réglages › Moteur IA.")
         system = system_text(task)
         if self.provider == "ollama":
             body = {
-                "model": self.model,
+                "model": model,
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": content}],
                 "stream": False,
                 "options": {"num_ctx": CONTEXT, "num_predict": max_tokens},
@@ -143,7 +146,7 @@ class LocalLLM(LLM):
             truncated = data.get("done_reason") == "length"
         else:
             body = {
-                "model": self.model,
+                "model": model,
                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": content}],
                 "max_tokens": max_tokens,
             }
@@ -156,24 +159,24 @@ class LocalLLM(LLM):
             text = (choice.get("message") or {}).get("content") or ""
             truncated = choice.get("finish_reason") == "length"
         # Rien n'est facturé : les tokens sont comptés, le coût est nul.
-        meter.record(task=label, model=self.full(), fresh=fresh, output=output, cost=0.0, via="local")
+        meter.record(task=label, model=self.full(model), fresh=fresh, output=output, cost=0.0, via="local")
         if truncated:
-            raise LLMError(f"{self.model} a atteint la limite de longueur de réponse.")
-        meter.note(f"{label} · {self.full()} (sur ce PC) · {output} tokens en sortie")
+            raise LLMError(f"{model} a atteint la limite de longueur de réponse.")
+        meter.note(f"{label} · {self.full(model)} (sur ce PC) · {output} tokens en sortie")
         return text.strip()
 
     async def parse(self, meter: RunMeter, *, model: str, task: str, content: str, schema: type[T], effort: str = "medium", max_tokens: int = 16000) -> T:
-        raw = await self._call(meter, task=task, content=content, max_tokens=max_tokens, schema=schema, label=task)
+        raw = await self._call(meter, model=model, task=task, content=content, max_tokens=max_tokens, schema=schema, label=task)
         try:
             return validate_json(schema, raw)
         except LLMError as first:
             meter.note(f"{task} · réponse invalide, nouvelle demande ({first})")
             retry = f"{content}\n\nTa réponse précédente n'était pas conforme ({first}). Rends uniquement l'objet JSON demandé, conforme au schéma."
-            raw = await self._call(meter, task=task, content=retry, max_tokens=max_tokens, schema=schema, label=task)
+            raw = await self._call(meter, model=model, task=task, content=retry, max_tokens=max_tokens, schema=schema, label=task)
             return validate_json(schema, raw)
 
     async def text(self, meter: RunMeter, *, model: str, task: str, content: str, effort: str = "medium", max_tokens: int = 8000) -> str:
-        return await self._call(meter, task=task, content=content, max_tokens=max_tokens, schema=None, label=task)
+        return await self._call(meter, model=model, task=task, content=content, max_tokens=max_tokens, schema=None, label=task)
 
     async def search(self, meter: RunMeter, *, model: str, prompt: str, max_uses: int = 3) -> list[dict]:
         meter.note("recherche web indisponible avec l'IA sur ce PC")

@@ -29,15 +29,17 @@ export interface AiTarget {
   policies: { label: string; url: string }[];
   /** Les fournisseurs qui traitent les articles en Chine : dit en clair avant l'accord. */
   china: string[];
+  /** Les serveurs de ce PC à qui des rôles sont confiés, à côté des fournisseurs en ligne. */
+  pc: string[];
 }
 
 /** Où partent les envois à l'IA. En ligne, chaque fournisseur qui a une clé (ou Claude Code)
  *  peut servir : un rôle réglé sur un fournisseur sans clé passe chez un autre. */
 export function aiTarget(st: Settings | undefined): AiTarget {
-  if (!st) return { local: false, names: [], policies: [], china: [] };
+  if (!st) return { local: false, names: [], policies: [], china: [], pc: [] };
   if (st.engine === "local") {
     const label = st.local_provider === "lmstudio" ? "LM Studio" : "Ollama";
-    return { local: true, names: [`ton PC (${label})`], policies: [], china: [] };
+    return { local: true, names: [`ton PC (${label})`], policies: [], china: [], pc: [label] };
   }
   const ids: (ProviderId | "claude_code")[] = [];
   if (st.engine_active === "claude_code") ids.push("claude_code");
@@ -45,6 +47,9 @@ export function aiTarget(st: Settings | undefined): AiTarget {
   for (const [id, p] of Object.entries(st.providers ?? {}) as [ProviderId, Settings["providers"][ProviderId]][]) {
     if (id !== "anthropic" && p.has_key) ids.push(id);
   }
+  // Des rôles confiés à l'IA de ce PC, à côté (ou à la place) des fournisseurs en ligne.
+  const onPc = [...new Set(Object.values(st.models ?? {}).flatMap((m) => (m.startsWith("ollama:") ? ["Ollama"] : m.startsWith("lmstudio:") ? ["LM Studio"] : [])))];
+  if (!ids.length && onPc.length) return { local: true, names: [`ton PC (${onPc.join(", ")})`], policies: [], china: [], pc: onPc };
   const region = (id: ProviderId | "claude_code") => st.providers?.[id === "claude_code" ? "anthropic" : id]?.region ?? "";
   const name = (id: ProviderId | "claude_code") => {
     const base = id === "claude_code" ? "Anthropic (Claude Code)" : id === "compatible" ? st.providers?.compatible?.url.replace(/^https?:\/\//, "").split("/")[0] || "ton autre fournisseur" : POLICIES[id].label.replace(" (API)", "");
@@ -53,9 +58,10 @@ export function aiTarget(st: Settings | undefined): AiTarget {
   };
   return {
     local: false,
-    names: ids.map(name),
+    names: [...ids.map(name), ...(onPc.length ? [`ton PC (${onPc.join(", ")})`] : [])],
     policies: ids.map((id) => POLICIES[id]).filter((p) => p.url),
     china: ids.filter((id) => region(id).includes("Chine")).map((id) => POLICIES[id as ProviderId].label),
+    pc: onPc,
   };
 }
 

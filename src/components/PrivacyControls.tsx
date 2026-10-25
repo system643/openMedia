@@ -45,7 +45,11 @@ export function AiBanner({ settings: st }: { settings: Settings | undefined }) {
         <Globe2 size={18} />
       </span>
       <div className="text-[13.5px] leading-snug text-ink-2">
-        <p className="text-[15px] font-semibold text-ink">L'analyse IA se fait en ligne, chez {listNames(ai.names)}.</p>
+        <p className="text-[15px] font-semibold text-ink">
+          {ai.pc.length
+            ? `L'analyse IA se fait en ligne, chez ${listNames(ai.names.filter((n) => !n.startsWith("ton PC")))}, et sur ton PC (${ai.pc.join(", ")}) pour les rôles que tu lui confies.`
+            : `L'analyse IA se fait en ligne, chez ${listNames(ai.names)}.`}
+        </p>
         <p className="mt-1">
           Ce qui leur est envoyé est listé ci-dessous, rien d'autre. Ce qu'ils en font (conservation, entraînement) dépend de leurs règles et de tes réglages chez eux :{" "}
           {ai.policies.map((p, i) => (

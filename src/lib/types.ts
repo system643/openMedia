@@ -252,10 +252,13 @@ export interface ProviderInfo {
 export type Tier = "maximum" | "premium" | "equilibre" | "rapide";
 export type Role = "triage" | "topic" | "director";
 
+/** Les serveurs de l'IA de ce PC, à qui l'on peut aussi confier un rôle (`ollama:qwen3:14b`). */
+export type LocalProviderId = "ollama" | "lmstudio";
+
 export interface ModelRow {
   id: string;
   label: string;
-  provider: ProviderId;
+  provider: ProviderId | LocalProviderId;
   tier: Tier | null;
   tier_label: string;
   price: [number, number, number] | null;
@@ -266,10 +269,12 @@ export interface ModelRow {
 }
 
 export interface ModelCatalog {
-  providers: { id: ProviderId; label: string; usable: boolean; has_key: boolean; search: boolean; batch: boolean; hint: string; region: string }[];
+  providers: { id: ProviderId | LocalProviderId; label: string; usable: boolean; has_key: boolean; search: boolean; batch: boolean; hint: string; region: string; local: boolean }[];
   models: ModelRow[];
   presets: Record<string, { label: string; by_provider: Record<ProviderId, Record<Role, string | null>> }>;
   tiers: Record<Tier, string>;
+  /** Le modèle qui sert vraiment chaque rôle (null : aucun moteur) ; vide avec « tout sur ce PC ». */
+  effective: Partial<Record<Role, string | null>>;
 }
 
 export interface CostStage {
