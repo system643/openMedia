@@ -83,7 +83,7 @@ def offline(monkeypatch):
     async def fronts_collect(keywords, since, langs):
         return [c for c in cands if c.origin == "une"]
 
-    async def gdelt_search(queries, days, per_lang=3):
+    async def gdelt_search(queries, days, tries=4):
         return [c for c in cands if c.origin == "gdelt"]
 
     async def no_rss(*a):
@@ -269,3 +269,39 @@ async def test_bing_alone_feeds_a_run_when_gdelt_and_fronts_are_empty(offline, m
     with session() as s:
         run = s.exec(__import__("sqlmodel").select(Run).where(Run.topic_id == t.id)).first()
     assert any(line.startswith("Collecte : ") and "Bing Actualités 2" in line for line in run.log), run.log
+
+
+async def test_a_fiche_without_sources_looks_back_a_month(offline, monkeypatch):
+    """Un sujet calme (un artiste, un dossier lent) : rien sur 7 jours, la fiche ne part pas vide
+    pour autant. Une fois qu'elle a des sources, les passages suivants ne remontent plus."""
+    at = now()
+    windows = []
+
+    async def nothing(*a, **k):
+        return []
+
+    async def bing(queries, since, per_lang=3):
+        windows.append(round((now() - since).total_seconds() / 86400))
+        if now() - since < timedelta(days=20):
+            return []
+        return [Candidate(url="https://www.rtbf.be/album", title="Écoles : le plan de rénovation annoncé il y a trois semaines", origin="bing", source_name="RTBF", published_at=at - timedelta(days=21))]
+
+    monkeypatch.setattr(topic_agent.fronts, "collect", nothing)
+    monkeypatch.setattr(topic_agent.gdelt, "search", nothing)
+    monkeypatch.setattr("openmedia.collect.bing_news.search", bing)
+    with session() as s:
+        t = Topic(name="Écoles calmes", prompt="Suis le plan de rénovation des écoles")
+        s.add(t)
+        s.commit()
+        s.refresh(t)
+    first = await topic_agent.run_topic(t.id, llm=FakeLLM())
+    assert not first["nothing_new"] and windows == [7, 30]
+    with session() as s:
+        fiche = s.get(Fiche, first["fiche_id"])
+        run = s.exec(__import__("sqlmodel").select(Run).where(Run.topic_id == t.id)).first()
+    assert [x["domain"] for x in fiche.sources] == ["rtbf.be"]
+    assert any("remonte à 30 jours" in line for line in run.log), run.log
+
+    windows.clear()
+    second = await topic_agent.run_topic(t.id, llm=FakeLLM())
+    assert second["nothing_new"] and windows == [1]  # depuis le passage précédent ; la fiche a une source : pas d'élargissement

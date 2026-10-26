@@ -161,7 +161,7 @@ async def _others(article: Article, source: Source, queries: dict[str, list[str]
             owners.add(registry.owner_key(s))
             out.append((a, s))
 
-    chosen = select_candidates(await news_search.search(queries, days, per_lang=1), since, limit=MAX_SOURCES * 2)
+    chosen = select_candidates(await news_search.search(queries, days, per_lang=1, tries=1), since, limit=MAX_SOURCES * 2)
     titles = [(c.url, c.title, c.url, c.published_at) for c in chosen]
     keep(await gather_articles(pseudo, {}, since, now(), extra=chosen))
     # Une page illisible (paywall, blocage) : en dernier recours, son titre avec son éditeur.

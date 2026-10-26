@@ -162,7 +162,7 @@ async def test_pulse_counts_only_new_headlines_once_a_day(monkeypatch):
     calls = []
     t = _db_topic(spec={"queries_fr": ["budget écoles"], "keywords": ["écoles"]}, languages=["fr"], last_run_at=now() - timedelta(days=1))
 
-    async def search(queries, days, per_lang=3):
+    async def search(queries, days, tries=4):
         calls.append((queries, days))
         return [
             _cand("Écoles : le plan voté à l'Assemblée", "Le Monde"),

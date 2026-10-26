@@ -44,6 +44,7 @@ from .triage import triage
 from .verify import verify
 
 FIRST_WINDOW_DAYS = 7
+WIDE_WINDOW_DAYS = 30  # une fiche encore sans source cherche jusqu'à un mois en arrière
 OVERLAP = timedelta(hours=6)
 MAX_CANDIDATES = 60
 CANDIDATES_PER_EXTRA_DAY = 15  # un sujet espacé ratisse une fenêtre plus longue
@@ -334,42 +335,63 @@ async def run_topic(topic_id: int, *, dry: bool = False, llm: LLM | None = None)
 
     try:
         spec = await ensure_spec(llm, meter, topic, settings)
+        research_topic = topic.kind == "recherche"
+        meta: dict = {}
+        origins: dict = {}
+        verdicts: dict = {}
+        kept: dict = {}
+
+        async def harvest(since: datetime) -> list:
+            """Collecte, tri et recherche complémentaire depuis `since` : complète meta, origins,
+            verdicts et kept, rend les reprises. Un article déjà trié à ce passage ne l'est pas deux fois."""
+            found = await gather_articles(topic, spec, since, at, note=lambda line: stage("collect", line))
+            found = [(a, s, o) for a, s, o in found if a.id not in origins]  # déjà vu à ce passage
+            if gdelt.resting():
+                stage("collect", "GDELT limite les requêtes en ce moment : collecte partielle (Bing Actualités, unes des médias et flux RSS)")
+            origins.update({a.id: o for a, _, o in found})
+            # Une reprise telle quelle d'un article déjà retenu n'apprend rien : elle n'est pas triée.
+            found, reprises = (found, []) if research_topic else split_reprises(topic_id, found, at)
+            stage("extract", f"{len(found)} articles nouveaux extraits" + (f", {len(reprises)} reprise(s) d'articles déjà lus" if reprises else ""))
+
+            if not research_topic:
+                found, dropped = prefilter(found, spec)
+                if dropped:
+                    meter.note(f"préfiltre : {dropped} page(s) sans aucun mot-clé du sujet, ou de protection anti-robot, écartées sans IA")
+            meta.update({a.id: (a, s) for a, s, _ in found})
+            stage("triage", "Tri : faits, analyses, opinions, réactions")
+            found_verdicts = await triage(llm, meter, settings.models.triage, spec, [(a, s) for a, s, _ in found], task="triage_research" if research_topic else "triage")
+            verdicts.update(found_verdicts)
+            found_kept = {i: v for i, v in found_verdicts.items() if v.keep and v.relevance >= 0.5 and v.nature != "hors_sujet"}
+            if not research_topic:  # qualifier les domaines inconnus des seuls articles retenus
+                await qualify_sources(llm, meter, model, [meta[i] for i in found_kept])
+            kept.update(found_kept)
+
+            independent = {independence_key(*meta[i]) for i in kept}
+            if settings.claude_search_fallback and not dry and not research_topic and len(independent) < settings.min_independent_sources:
+                stage("search", f"Seulement {len(independent)} source(s) indépendante(s) : recherche complémentaire")
+                by_lang = {lang: spec.get(f"queries_{lang}", []) for lang in ("fr", "en") if lang in topic.languages}
+                extra = await claude_search.search(llm, meter, model, spec.get("summary", topic.name), spec.get("queries_fr", []) + spec.get("queries_en", []), since, by_lang=by_lang)
+                more = await gather_articles(topic, spec, since, at, extra=extra)
+                more = [(a, s, o) for a, s, o in more if a.id not in meta]
+                meta.update({a.id: (a, s) for a, s, _ in more})
+                origins.update({a.id: o for a, _, o in more})
+                more_verdicts = await triage(llm, meter, settings.models.triage, spec, [(a, s) for a, s, _ in more])
+                verdicts.update(more_verdicts)
+                more_kept = {i: v for i, v in more_verdicts.items() if v.keep and v.relevance >= 0.5 and v.nature != "hors_sujet"}
+                await qualify_sources(llm, meter, model, [meta[i] for i in more_kept])
+                kept.update(more_kept)
+            return reprises
+
         since = window(topic, at, topic.run_every_days or settings.run_every_days or 1)
         stage("collect", f"Collecte depuis le {since:%d/%m %H:%M}")
-        found = await gather_articles(topic, spec, since, at, note=lambda line: stage("collect", line))
-        if gdelt.resting():
-            stage("collect", "GDELT limite les requêtes en ce moment : collecte partielle (Bing Actualités, unes des médias et flux RSS)")
-        research_topic = topic.kind == "recherche"
-        origins = {a.id: o for a, _, o in found}
-        # Une reprise telle quelle d'un article déjà retenu n'apprend rien : elle n'est pas triée.
-        found, reprises = (found, []) if research_topic else split_reprises(topic_id, found, at)
-        stage("extract", f"{len(found)} articles nouveaux extraits" + (f", {len(reprises)} reprise(s) d'articles déjà lus" if reprises else ""))
-
-        if not research_topic:
-            found, dropped = prefilter(found, spec)
-            if dropped:
-                meter.note(f"préfiltre : {dropped} page(s) sans aucun mot-clé du sujet, ou de protection anti-robot, écartées sans IA")
-        meta = {a.id: (a, s) for a, s, _ in found}
-        stage("triage", "Tri : faits, analyses, opinions, réactions")
-        verdicts = await triage(llm, meter, settings.models.triage, spec, [(a, s) for a, s, _ in found], task="triage_research" if research_topic else "triage")
-        kept = {i: v for i, v in verdicts.items() if v.keep and v.relevance >= 0.5 and v.nature != "hors_sujet"}
-        if not research_topic:  # qualifier les domaines inconnus des seuls articles retenus
-            await qualify_sources(llm, meter, model, [meta[i] for i in kept])
-
-        independent = {independence_key(*meta[i]) for i in kept}
-        if settings.claude_search_fallback and not dry and not research_topic and len(independent) < settings.min_independent_sources:
-            stage("search", f"Seulement {len(independent)} source(s) indépendante(s) : recherche complémentaire")
-            by_lang = {lang: spec.get(f"queries_{lang}", []) for lang in ("fr", "en") if lang in topic.languages}
-            extra = await claude_search.search(llm, meter, model, spec.get("summary", topic.name), spec.get("queries_fr", []) + spec.get("queries_en", []), since, by_lang=by_lang)
-            more = await gather_articles(topic, spec, since, at, extra=extra)
-            more = [(a, s, o) for a, s, o in more if a.id not in meta]
-            meta.update({a.id: (a, s) for a, s, _ in more})
-            origins.update({a.id: o for a, _, o in more})
-            more_verdicts = await triage(llm, meter, settings.models.triage, spec, [(a, s) for a, s, _ in more])
-            verdicts.update(more_verdicts)
-            more_kept = {i: v for i, v in more_verdicts.items() if v.keep and v.relevance >= 0.5 and v.nature != "hors_sujet"}
-            await qualify_sources(llm, meter, model, [meta[i] for i in more_kept])
-            kept.update(more_kept)
+        reprises = await harvest(since)
+        # Une fiche encore sans source (premier passage, ou rien trouvé jusqu'ici) : plutôt qu'une
+        # fiche vide, la collecte remonte un mois, le temps de poser l'état du sujet.
+        empty_yet = not ((last := _latest_fiche(topic_id)) and last.sources)
+        if not kept and empty_yet and not research_topic and not topic.since and since > at - timedelta(days=WIDE_WINDOW_DAYS):
+            since = at - timedelta(days=WIDE_WINDOW_DAYS)
+            stage("collect", f"Rien de retenu : la fiche n'a pas encore de source, la collecte remonte à {WIDE_WINDOW_DAYS} jours")
+            reprises += await harvest(since)
 
         clusters = {it["id"]: it["cluster"] for it in cluster([{"id": a.id, "title": a.title, "simhash": a.simhash} for a, _ in meta.values()])}
         with session() as s:

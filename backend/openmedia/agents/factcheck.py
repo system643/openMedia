@@ -115,7 +115,7 @@ async def find_corroboration(llm: LLM, meter: RunMeter, model: str, queries: dic
 
     exclude = exclude or set()
     days = days or max(1, math.ceil((now() - since).total_seconds() / 86400))
-    cands = await news_search.search({lang: qs for lang, qs in queries.items() if qs}, days, per_lang=2)
+    cands = await news_search.search({lang: qs for lang, qs in queries.items() if qs}, days, per_lang=2, tries=1)
     pseudo = Topic(id=0, name="recoupement", prompt="", languages=list(queries))
     found = await gather_articles(pseudo, {}, since, now(), extra=select_candidates(cands, since, limit=limit))
     others = [(a, s) for a, s, _ in found if a.id not in exclude]

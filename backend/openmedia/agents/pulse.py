@@ -85,7 +85,7 @@ async def check(topic: Topic, at: datetime) -> dict | None:
     found = []
     if queries:
         try:
-            found = await gdelt.search(queries, 1, per_lang=1)
+            found = await gdelt.search(queries, 1, tries=1)
         except Exception:  # noqa: BLE001 — hors ligne, ou GDELT limite : on réessaiera demain
             found = []
     since = _aware(topic.last_run_at) or (at - timedelta(days=1))

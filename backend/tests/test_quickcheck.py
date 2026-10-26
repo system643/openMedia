@@ -60,7 +60,7 @@ def others(monkeypatch):
     _owner("journal-c.fr", "Groupe B")
     _owner("journal-d.fr", "Groupe D")
 
-    async def search(queries, days, per_lang=3):
+    async def search(queries, days, per_lang=3, tries=1):
         return []
 
     async def gather(topic, spec, since, at, extra=None):
@@ -156,7 +156,7 @@ async def test_headlines_when_links_cannot_be_decoded(monkeypatch):
     _owner("journal-e.fr", "Groupe E")
     from openmedia.collect.base import Candidate
 
-    async def search(queries, days, per_lang=3):
+    async def search(queries, days, per_lang=3, tries=1):
         return [Candidate(url="https://journal-e.fr/budget-titres", title="Budget 2027 : adopté par 312 voix à l'Assemblée", origin="gdelt", source_name="journal-e.fr")]
 
     async def nothing(*a, **k):

@@ -373,7 +373,7 @@ async def preview_topic(body: TopicIn):
     log_run("spec", meter)
     from ..collect import news_search
 
-    cands = await news_search.search({"fr": spec.queries_fr[:2], "en": spec.queries_en[:2]}, 7, per_lang=2)
+    cands = await news_search.search({"fr": spec.queries_fr[:2], "en": spec.queries_en[:2]}, 7, per_lang=2, tries=1)
     return {"spec": spec.model_dump(), "cost_usd": round(meter.cost_usd, 4), "sample": [{"title": c.title, "source": c.source_name, "published_at": c.published_at} for c in cands[:20]]}
 
 

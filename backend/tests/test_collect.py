@@ -74,9 +74,37 @@ async def test_gdelt_rests_after_repeated_refusals(monkeypatch):
     monkeypatch.setattr(gdelt.asyncio, "sleep", _no_sleep)
     monkeypatch.setattr(gdelt, "_cool_until", 0.0)
     route = respx.get(url__startswith=gdelt.API).respond(429, text="Please limit requests to one every 5 seconds")
-    assert await gdelt.search({"fr": ["budget", "écoles"]}, 3) == []
-    assert route.call_count == 2  # deux refus, puis GDELT se repose : la seconde requête n'est pas envoyée
+    assert await gdelt.search({"fr": ["budget", "écoles"], "en": ["budget"]}, 3) == []
+    assert route.call_count == gdelt.TRIES  # tous les essais refusés : GDELT se repose, l'anglais n'est pas envoyé
+    assert gdelt.resting()
     monkeypatch.setattr(gdelt, "_cool_until", 0.0)
+
+
+# GDELT n'échappe pas la barre oblique inverse du titre (relevé le 26/10/2026) : JSON invalide.
+GDELT_RAW = '{"articles": [ { "url": "https://ultimateclassicrock.com/peter-gabriel-oi-album/", "title": "Peter Gabriel Announces Details For New Album  o \\ i  ", "seendate": "20261001T190000Z", "domain": "ultimateclassicrock.com", "language": "English", "sourcecountry": "United States" }, { "url": "https://ex.fr/a", "title": "Chemin C:\\\\temp et \\u00e9t\\u00e9", "seendate": "20261002T080000Z", "domain": "ex.fr" } ] }'
+
+
+def test_gdelt_reads_its_badly_escaped_json():
+    import json
+
+    with pytest.raises(ValueError):
+        json.loads(GDELT_RAW)
+    a, b = gdelt.parse(gdelt.load(GDELT_RAW), "en")
+    assert a.title == "Peter Gabriel Announces Details For New Album  o \\ i"
+    assert b.title == "Chemin C:\\temp et été"  # les échappements valides restent intacts
+    assert gdelt.load("Your query was too short or too long.") == {} and gdelt.load("[]") == {}
+
+
+@respx.mock
+async def test_gdelt_one_query_per_language_by_relevance_retried(monkeypatch):
+    monkeypatch.setattr(gdelt.asyncio, "sleep", _no_sleep)
+    monkeypatch.setattr(gdelt, "_cool_until", 0.0)
+    route = respx.get(url__startswith=gdelt.API).mock(side_effect=[respx.MockResponse(429, text="Please limit requests"), respx.MockResponse(200, text=GDELT_RAW), respx.MockResponse(200, text="Phrase too short")])
+    found = await gdelt.search({"fr": ["", "Peter Gabriel album", "Peter Gabriel concert"], "en": ["Peter Gabriel new album", "Peter Gabriel tour"]}, 30)
+    sent = [str(c.request.url) for c in route.calls]
+    assert len(sent) == 3 and "Peter+Gabriel+album" in sent[0] and sent[0] == sent[1] and "new+album" in sent[2]  # un refus réessayé, puis une requête par langue
+    assert all("sort" not in u and "maxrecords=100" in u and "timespan=30d" in u for u in sent)  # pertinence (HybridRel), pas DateDesc
+    assert len(found) == 2 and not gdelt.resting()
 
 
 async def _no_sleep(_):
